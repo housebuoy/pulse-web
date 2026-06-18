@@ -5,29 +5,37 @@ import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { StepProgress } from "@/components/onboarding/step-progress";
 import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { DEPARTMENTS } from "@/lib/constants";
-
-const DURATIONS = ["10", "15", "20", "30", "45", "60"];
+import {
+  OperatingHours,
+  type OperatingHoursValue,
+} from "@/components/onboarding/operating-hours";
 
 export default function FacilityOperations() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     phone: "",
     email: "",
     specialties: [] as string[],
-    capacity: "",
-    consultDuration: "20",
+    capacity: "500",
+    duration: "20",
+    
+    // THE FIX: Update this block to match the new interface
+    operatingHours: {
+      alwaysOpen: false,
+      schedules: [
+        {
+          id: "default-1", // Use a static string here to prevent hydration errors on reload
+          days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+          open: "08:00",
+          close: "17:00",
+        },
+      ],
+    },
   });
 
   const set = (key: keyof typeof formData, val: unknown) =>
@@ -97,8 +105,8 @@ export default function FacilityOperations() {
                 id="consultDuration"
                 type="number"
                 min="1"
-                value={formData.consultDuration}
-                onChange={(e) => set("consultDuration", e.target.value)}
+                value={formData.duration}
+                onChange={(e) => set("duration", e.target.value)}
                 placeholder="15"
                 className="pr-20"
               />
@@ -108,6 +116,13 @@ export default function FacilityOperations() {
             </div>
           </FormField>
         </div>
+
+        <FormField label="Operating Hours" htmlFor="operatingHours">
+          <OperatingHours
+            value={formData.operatingHours}
+            onChange={(v) => set("operatingHours", v)}
+          />
+        </FormField>
 
         <div className="py-6">
           <Button type="submit" className="ml-auto flex h-12 w-32 shadow-brand">

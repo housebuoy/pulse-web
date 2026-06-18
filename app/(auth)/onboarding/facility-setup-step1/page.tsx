@@ -10,12 +10,18 @@ import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { FileUpload } from "@/components/onboarding/file-upload";
 import { IncompleteSetupDialog } from "@/components/onboarding/incomplete-setup-dialog";
+import { SingleSelect } from "@/components/ui/single-select";
+import { MapPin } from "lucide-react";
+import { REGIONS } from "@/lib/constants";
+
+const REGION_OPTIONS = REGIONS.map((r) => ({ label: r, value: r }));
 
 export default function WorkspaceStepOne() {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
     hospitalName: "",
+    region: "",
     address: "",
     hefraLicense: "",
     document: null as File | null,
@@ -47,6 +53,10 @@ export default function WorkspaceStepOne() {
     proceedToNextStep();
   };
 
+  const handlePickLocation = () => {
+    // TODO: open map picker (current location / landmark search)
+  };
+
   return (
     <>
       <StepProgress current={1} />
@@ -67,15 +77,39 @@ export default function WorkspaceStepOne() {
           />
         </FormField>
 
-        <FormField label="Address" htmlFor="address">
-          <Input
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Enter physical street address"
-          />
-        </FormField>
+        <div className="grid grid-cols-2 gap-6">
+          <FormField label="Region" htmlFor="region">
+            <SingleSelect
+              value={formData.region}
+              onChange={(v) => setFormData((p) => ({ ...p, region: v }))}
+              options={REGION_OPTIONS}
+              placeholder="Select region"
+              searchPlaceholder="Search regions…"
+              emptyText="No regions found."
+            />
+          </FormField>
+
+          <FormField label="Address" htmlFor="address">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={handlePickLocation}
+                aria-label="Pick location on map"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted transition-colors hover:text-brand"
+              >
+                <MapPin className="h-4 w-4" />
+              </button>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Enter physical street address"
+                className="pl-9"
+              />
+            </div>
+          </FormField>
+        </div>
 
         <FormField label="HeFRA License Number" htmlFor="hefraLicense">
           <Input
