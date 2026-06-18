@@ -1,0 +1,18 @@
+app/
+  (auth)/
+    login/page.tsx          # split-screen onboarding
+    onboarding/page.tsx     # facility onboarding + HeFRA verify
+  (dashboard)/
+    layout.tsx              # sidebar shell, RBAC guard
+    queue/page.tsx          # live queue tracking
+    appointments/page.tsx
+    departments/page.tsx
+    doctors/page.tsx
+    shifts/page.tsx
+  layout.tsx                # root: font + providers
+lib/
+  api.ts                    # axios client + JWT
+  query-client.tsx          # TanStack provider
+features/
+  auth/store.ts             # zustand
+  queue/hooks.ts            # useQueue() polling hook
