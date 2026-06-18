@@ -31,7 +31,7 @@ export default function WorkspaceStepOne() {
   const proceedToNextStep = () => {
     // TODO: Save formData to your state management or API here
     console.log("Proceeding to Step 2 with data:", formData);
-    router.push("/onboarding/departments"); // Adjust path to your actual Step 2
+    router.push("/onboarding/departments-step2"); // Adjust path to your actual Step 2
   };
 
   const handleSubmit = (e: React.FormEvent) => {
