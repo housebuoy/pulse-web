@@ -166,6 +166,8 @@
   }
   html {
     @apply font-sans;
+    height: 100%;
+    overflow: hidden;
     font-size: 90%;   /* ← the whole UI now renders at 90% density */
   }
 }
