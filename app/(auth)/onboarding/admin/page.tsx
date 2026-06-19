@@ -11,10 +11,12 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { StepProgress } from "@/components/onboarding/step-progress";
 import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
+import { useOnboardingStore } from "@/store/use-onboarding-store";
 
 export default function AdminAccount() {
   const router = useRouter();
-  
+  const onboardingData = useOnboardingStore((state) => state.data);
+
   // 1. Added confirmPassword to the initial state
   const [form, setForm] = useState({
     fullName: "",
@@ -46,9 +48,11 @@ export default function AdminAccount() {
     }
 
     if (!form.agreed) return;
-    
+
+    const payload = { ...onboardingData, ...form };
+
     // TODO: create account, then router.push("/dashboard")
-    console.log("Account created successfully", form);
+    console.log("Account created successfully", payload);
   };
 
   return (

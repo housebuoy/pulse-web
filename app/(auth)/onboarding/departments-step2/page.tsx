@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
@@ -10,36 +9,19 @@ import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { DEPARTMENTS } from "@/lib/constants";
+import { OperatingHours } from "@/components/onboarding/operating-hours";
 import {
-  OperatingHours,
-  type OperatingHoursValue,
-} from "@/components/onboarding/operating-hours";
+  useOnboardingStore,
+  type OnboardingData,
+} from "@/store/use-onboarding-store";
 
 export default function FacilityOperations() {
   const router = useRouter();
-const [formData, setFormData] = useState({
-    phone: "",
-    email: "",
-    specialties: [] as string[],
-    capacity: "500",
-    duration: "20",
-    
-    // THE FIX: Update this block to match the new interface
-    operatingHours: {
-      alwaysOpen: false,
-      schedules: [
-        {
-          id: "default-1", // Use a static string here to prevent hydration errors on reload
-          days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-          open: "08:00",
-          close: "17:00",
-        },
-      ],
-    },
-  });
+  const formData = useOnboardingStore((state) => state.data);
+  const updateData = useOnboardingStore((state) => state.updateData);
 
-  const set = (key: keyof typeof formData, val: unknown) =>
-    setFormData((p) => ({ ...p, [key]: val }));
+  const set = <K extends keyof OnboardingData>(key: K, val: OnboardingData[K]) =>
+    updateData({ [key]: val } as Partial<OnboardingData>);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

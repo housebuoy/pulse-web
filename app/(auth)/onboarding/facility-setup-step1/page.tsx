@@ -13,30 +13,25 @@ import { IncompleteSetupDialog } from "@/components/onboarding/incomplete-setup-
 import { SingleSelect } from "@/components/ui/single-select";
 import { MapPin } from "lucide-react";
 import { REGIONS } from "@/lib/constants";
+import { useOnboardingStore } from "@/store/use-onboarding-store";
+import type { OnboardingData } from "@/store/use-onboarding-store";
 
 const REGION_OPTIONS = REGIONS.map((r) => ({ label: r, value: r }));
 
 export default function WorkspaceStepOne() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    hospitalName: "",
-    region: "",
-    address: "",
-    hefraLicense: "",
-    document: null as File | null,
-  });
+  const formData = useOnboardingStore((state) => state.data);
+  const updateData = useOnboardingStore((state) => state.updateData);
 
   const [showDialog, setShowDialog] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    updateData({ [name]: value } as Partial<OnboardingData>);
   };
 
   const proceedToNextStep = () => {
-    // TODO: Save formData to your state management or API here
-    console.log("Proceeding to Step 2 with data:", formData);
     router.push("/onboarding/departments-step2"); // Adjust path to your actual Step 2
   };
 
@@ -81,7 +76,7 @@ export default function WorkspaceStepOne() {
           <FormField label="Region" htmlFor="region">
             <SingleSelect
               value={formData.region}
-              onChange={(v) => setFormData((p) => ({ ...p, region: v }))}
+              onChange={(v) => updateData({ region: v })}
               options={REGION_OPTIONS}
               placeholder="Select region"
               searchPlaceholder="Search regions…"
@@ -125,7 +120,7 @@ export default function WorkspaceStepOne() {
           <FileUpload
             id="document"
             value={formData.document}
-            onChange={(file) => setFormData((p) => ({ ...p, document: file }))}
+            onChange={(file) => updateData({ document: file })}
             accept=".pdf,image/*"
             hint="Upload PDF or Image. Max 5MB"
           />
