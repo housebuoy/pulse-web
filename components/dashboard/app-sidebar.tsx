@@ -28,13 +28,13 @@ import {
 
 const navItems: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Overview", href: "/d/overview", icon: LayoutGrid },
-  { label: "Live Queue", href: "/live-queue", icon: ListOrdered },
-  { label: "Appointments", href: "/appointments", icon: CalendarDays },
-  { label: "Departments", href: "/departments", icon: Building2 },
-  { label: "Staff & Doctors", href: "/staff", icon: Stethoscope },
-  { label: "Patients", href: "/patients", icon: Users },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Live Queue", href: "/d/live-queue", icon: ListOrdered },
+  { label: "Appointments", href: "/d/appointments", icon: CalendarDays },
+  { label: "Departments", href: "/d/departments", icon: Building2 },
+  { label: "Staff & Doctors", href: "/d/staff", icon: Stethoscope },
+  { label: "Patients", href: "/d/patients", icon: Users },
+  { label: "Analytics", href: "/d/analytics", icon: BarChart3 },
+  { label: "Settings", href: "/d/settings", icon: Settings },
 ];
 
 function SidebarTooltip({
@@ -128,7 +128,7 @@ export function AppSidebar() {
                     {facility?.name ?? "Loading…"}
                   </span>
                 </div>
-                <ChevronDown className="size-4 shrink-0 text-fg-muted" />
+                {/* <ChevronDown className="size-4 shrink-0 text-fg-muted" /> */}
               </>
             )}
           </button>

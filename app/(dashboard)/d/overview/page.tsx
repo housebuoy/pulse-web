@@ -11,10 +11,10 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import {
   StatCard,
   StatCardSkeleton,
-} from "@/components/dashboard/stat-card";
-import { LiveQueueCard } from "@/components/dashboard/live-queue-card";
-import { NeedsAttentionCard } from "@/components/dashboard/needs-attention-card";
-import { PatientVolumeChart } from "@/components/dashboard/patient-volume-chart";
+} from "@/components/dashboard/overview/stat-card";
+import { LiveQueueCard } from "@/components/dashboard/overview/live-queue-card";
+import { NeedsAttentionCard } from "@/components/dashboard/overview/needs-attention-card";
+import { PatientVolumeChart } from "@/components/dashboard/overview/patient-volume-chart";
 import { useDashboardStats } from "@/hooks/use-dashboard";
 
 // Icons are a UI concern, not data — map them to metric ids here.

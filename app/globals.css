@@ -56,6 +56,11 @@
   --color-brand: #2a79e9;
   --color-brand-accent: #dbeafe;
 
+  /* Semantic status (queue priority, alerts, trends) */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+
   /* Text levels (shadcn only gives you foreground + muted-foreground) */
   --color-fg: #111827;
   --color-fg-secondary: #4b5563;
