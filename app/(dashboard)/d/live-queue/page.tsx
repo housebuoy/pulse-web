@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { QueueDepartmentTabs } from "@/components/dashboard/queue/queue-department-tabs";
 import { QueueSummary } from "@/components/dashboard/queue/queue-summary";
@@ -15,8 +16,12 @@ import {
 import type { QueueEntry } from "@/lib/types/queue";
 import { compareWaiting, minutesSince } from "@/lib/queue-utils";
 
-export default function LiveQueuePage() {
-  const [department, setDepartment] = useState("all");
+function LiveQueueBody() {
+  // Pre-filtered when arriving from a department's "View live queue" link.
+  const searchParams = useSearchParams();
+  const [department, setDepartment] = useState(
+    () => searchParams.get("department") ?? "all",
+  );
 
   const { data: departments = [] } = useQueueDepartments();
   const { data: entries = [], isLoading } = useQueueEntries(department);
@@ -45,50 +50,57 @@ export default function LiveQueuePage() {
     callNext.mutate({ departmentId: entry.departmentId, entryId: entry.id });
 
   return (
+    <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex flex-col gap-6">
+        <QueueDepartmentTabs
+          departments={departments}
+          value={department}
+          onChange={setDepartment}
+        />
+
+        <QueueSummary
+          waiting={waiting.length}
+          serving={serving.length}
+          longestWait={longestWait}
+        />
+
+        <NowServingPanel
+          serving={serving}
+          canCallNext={!isAllView && waiting.length > 0}
+          onCallNext={() => callNext.mutate({ departmentId: department })}
+          onComplete={(entry) =>
+            updateStatus.mutate({ entryId: entry.id, status: "completed" })
+          }
+          onNoShow={(entry) =>
+            updateStatus.mutate({ entryId: entry.id, status: "no_show" })
+          }
+          isCalling={callNext.isPending}
+          isUpdating={updateStatus.isPending}
+        />
+
+        <QueueList
+          entries={waiting}
+          departments={departments}
+          showDepartment={isAllView}
+          onCall={handleCall}
+          onSkip={(entry) =>
+            updateStatus.mutate({ entryId: entry.id, status: "skipped" })
+          }
+          isLoading={isLoading}
+          isMutating={isMutating}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default function LiveQueuePage() {
+  return (
     <>
       <DashboardHeader title="Live Queue" />
-
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="flex flex-col gap-6">
-          <QueueDepartmentTabs
-            departments={departments}
-            value={department}
-            onChange={setDepartment}
-          />
-
-          <QueueSummary
-            waiting={waiting.length}
-            serving={serving.length}
-            longestWait={longestWait}
-          />
-
-          <NowServingPanel
-            serving={serving}
-            canCallNext={!isAllView && waiting.length > 0}
-            onCallNext={() => callNext.mutate({ departmentId: department })}
-            onComplete={(entry) =>
-              updateStatus.mutate({ entryId: entry.id, status: "completed" })
-            }
-            onNoShow={(entry) =>
-              updateStatus.mutate({ entryId: entry.id, status: "no_show" })
-            }
-            isCalling={callNext.isPending}
-            isUpdating={updateStatus.isPending}
-          />
-
-          <QueueList
-            entries={waiting}
-            departments={departments}
-            showDepartment={isAllView}
-            onCall={handleCall}
-            onSkip={(entry) =>
-              updateStatus.mutate({ entryId: entry.id, status: "skipped" })
-            }
-            isLoading={isLoading}
-            isMutating={isMutating}
-          />
-        </div>
-      </div>
+      <Suspense fallback={<div className="flex-1" />}>
+        <LiveQueueBody />
+      </Suspense>
     </>
   );
 }

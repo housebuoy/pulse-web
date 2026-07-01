@@ -18,7 +18,7 @@ export function NeedsAttentionCard() {
   const { data: alerts = [], isLoading } = useDashboardAlerts();
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
       <div className="flex items-center gap-2">
         <TriangleAlert className="size-[18px] text-warning" />
         <h2 className="text-base font-bold text-fg">Needs Attention</h2>

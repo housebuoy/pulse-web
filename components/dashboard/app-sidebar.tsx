@@ -11,14 +11,25 @@ import {
   ChevronDown,
   LayoutGrid,
   ListOrdered,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
   Stethoscope,
+  User,
   Users,
   type LucideIcon,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCurrentFacility, useCurrentUser } from "@/hooks/use-dashboard";
+import { useFacility, useProfile } from "@/hooks/use-settings";
+import { UserAvatar } from "@/components/dashboard/shared/user-avatar";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -59,12 +70,15 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { data: facility } = useCurrentFacility();
   const { data: user } = useCurrentUser();
+  // avatarUrl and logoUrl come from settings (single source of truth).
+  const { data: profile } = useProfile();
+  const { data: facilitySettings } = useFacility();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <aside
       className={cn(
-        "flex shrink-0 flex-col justify-between border-r border-border bg-surface p-4 transition-[width] duration-200",
+        "flex shrink-0 flex-col justify-between border-r border-border bg-surface p-4 transition-[width] duration-200 print:hidden",
         collapsed ? "w-18" : "w-64",
       )}
     >
@@ -77,16 +91,26 @@ export function AppSidebar() {
             aria-label={collapsed ? "Expand sidebar" : "Pulse Health"}
             className={cn(
               "group relative flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-brand",
+              facilitySettings?.logoUrl && "bg-transparent p-0 overflow-hidden",
               collapsed && "cursor-pointer",
             )}
           >
-            <Activity
-              className={cn(
-                "size-5 text-white transition-opacity",
-                collapsed && "group-hover:opacity-0",
-              )}
-            />
-            {collapsed && (
+            {facilitySettings?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={facilitySettings.logoUrl}
+                alt={facility?.name ?? "Facility logo"}
+                className="size-9 rounded-[10px] object-cover"
+              />
+            ) : (
+              <Activity
+                className={cn(
+                  "size-5 text-white transition-opacity",
+                  collapsed && "group-hover:opacity-0",
+                )}
+              />
+            )}
+            {collapsed && !facilitySettings?.logoUrl && (
               <PanelLeftOpen className="absolute size-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
             )}
           </button>
@@ -159,31 +183,58 @@ export function AppSidebar() {
         </nav>
       </div>
 
-      {/* profile */}
-      <SidebarTooltip active={collapsed} label={user?.name ?? "Loading…"}>
-        <div
-          className={cn(
-            "flex items-center gap-2.5 rounded-xl border border-border bg-surface-subtle p-2.5",
-            collapsed && "justify-center border-0 bg-transparent",
-          )}
-        >
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-sm font-bold text-brand">
-            {(user?.name ?? "U")
-              .split(" ")
-              .map((n) => n[0])
-              .slice(0, 2)
-              .join("")}
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-[13px] font-medium text-fg">
-                {user?.name ?? "Loading…"}
-              </span>
-              <span className="text-[11px] text-fg-muted">{user?.role ?? ""}</span>
-            </div>
-          )}
-        </div>
-      </SidebarTooltip>
+      {/* profile — clicking opens a menu: Profile & Account + Log out */}
+      <DropdownMenu>
+        <SidebarTooltip active={collapsed} label={user?.name ?? "Loading…"}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-xl border border-border bg-surface-subtle p-2.5 transition-colors hover:bg-surface-muted",
+                collapsed && "justify-center border-0 bg-transparent",
+              )}
+            >
+              <UserAvatar
+                name={user?.name ?? "U"}
+                avatarUrl={profile?.avatarUrl}
+                size="sm"
+                shape="square"
+                className="bg-brand/15"
+              />
+              {!collapsed && (
+                <div className="flex min-w-0 flex-1 flex-col text-left">
+                  <span className="truncate text-[13px] font-medium text-fg">
+                    {user?.name ?? "Loading…"}
+                  </span>
+                  <span className="text-[11px] text-fg-muted">{user?.role ?? ""}</span>
+                </div>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+        </SidebarTooltip>
+
+        <DropdownMenuContent side="top" align="start" className="w-56">
+          <DropdownMenuItem asChild>
+            <Link href="/d/settings?tab=profile" className="flex items-center gap-2">
+              <User className="size-4" />
+              Profile &amp; Account
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("pulse_token");
+              }
+              window.location.href = "/onboarding/admin";
+            }}
+          >
+            <LogOut className="size-4" />
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </aside>
   );
 }

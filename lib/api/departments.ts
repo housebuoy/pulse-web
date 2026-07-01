@@ -4,6 +4,7 @@
 import { api } from "@/lib/axios"; // ⚠️ match your lib/api/queue.ts import exactly
 import * as mock from "@/lib/mock/departments";
 import type {
+  AssignHeadDoctorInput,
   CreateDepartmentInput,
   Department,
   DepartmentStats,
@@ -39,4 +40,20 @@ export async function createDepartment(
   if (USE_MOCK) return mock.createDepartment(input);
   const { data } = await api.post<Department>("/departments", input);
   return data;
+}
+
+export async function assignHeadDoctor(
+  input: AssignHeadDoctorInput
+): Promise<Department> {
+  if (USE_MOCK) return mock.assignHeadDoctor(input);
+  const { data } = await api.patch<Department>(
+    `/departments/${input.id}/head-doctor`,
+    { headDoctorName: input.headDoctorName }
+  );
+  return data;
+}
+
+export async function deleteDepartment(id: string): Promise<void> {
+  if (USE_MOCK) return mock.deleteDepartment(id);
+  await api.delete(`/departments/${id}`);
 }

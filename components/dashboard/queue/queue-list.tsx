@@ -27,7 +27,7 @@ export function QueueList({
     departments.find((d) => d.id === id)?.name ?? id;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between p-5">
         <h2 className="text-base font-bold text-fg">Waiting</h2>
         <span className="text-sm text-fg-muted">

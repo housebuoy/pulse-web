@@ -9,6 +9,7 @@ import { StepProgress } from "@/components/onboarding/step-progress";
 import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { FileUpload } from "@/components/onboarding/file-upload";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { IncompleteSetupDialog } from "@/components/onboarding/incomplete-setup-dialog";
 import { SingleSelect } from "@/components/ui/single-select";
 import { MapPin } from "lucide-react";
@@ -62,6 +63,14 @@ export default function WorkspaceStepOne() {
       />
 
       <form onSubmit={handleSubmit} className="mt-10 flex-1 space-y-6">
+        <ImageUpload
+          value={formData.logoUrl ?? null}
+          onChange={(url) => updateData({ logoUrl: url ?? undefined })}
+          shape="square"
+          size={80}
+          label="Facility logo (optional)"
+        />
+
         <FormField label="Hospital Name" htmlFor="hospitalName">
           <Input
             id="hospitalName"

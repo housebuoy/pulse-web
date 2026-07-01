@@ -1,4 +1,5 @@
 import type {
+  AssignHeadDoctorInput,
   CreateDepartmentInput,
   Department,
   DepartmentStats,
@@ -145,7 +146,7 @@ export function computeStats(): Promise<DepartmentStats> {
       acc.rooms += d.rooms;
       return acc;
     },
-    { total: 0, active: 0, closed: 0, doctorsOnDuty: 0, rooms: 0, waiting: 0 }
+    { total: 0, active: 0, closed: 0, doctorsOnDuty: 0, rooms: 0, waiting: 0 },
   );
   return delay(stats);
 }
@@ -157,8 +158,8 @@ export function applyUpdate(input: UpdateDepartmentInput): Promise<Department> {
   }
   const { id, ...patch } = input;
   Object.assign(found, patch);
-  // Closing a department zeroes its live floor activity.
-  if (patch.status === "closed") {
+  // Closing or archiving a department zeroes its live floor activity.
+  if (patch.status === "closed" || patch.status === "archived") {
     found.doctorsOnDuty = 0;
     found.waiting = 0;
     found.inConsultation = 0;
@@ -166,8 +167,24 @@ export function applyUpdate(input: UpdateDepartmentInput): Promise<Department> {
   return delay({ ...found });
 }
 
+export function assignHeadDoctor(
+  input: AssignHeadDoctorInput
+): Promise<Department> {
+  const found = store.find((d) => d.id === input.id);
+  if (!found) {
+    return Promise.reject(new Error(`Department ${input.id} not found`));
+  }
+  found.headDoctorName = input.headDoctorName;
+  return delay({ ...found });
+}
+
+export function deleteDepartment(id: string): Promise<void> {
+  store = store.filter((d) => d.id !== id);
+  return delay(undefined);
+}
+
 export function createDepartment(
-  input: CreateDepartmentInput
+  input: CreateDepartmentInput,
 ): Promise<Department> {
   const department: Department = {
     id: crypto.randomUUID(),

@@ -13,12 +13,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  addDays,
-  formatLongDate,
-  isToday,
-  toDateKey,
-} from "@/lib/appointment-utils";
+import { addDays, isToday, toDateKey } from "@/lib/appointment-utils";
+import { formatLongDate } from "@/lib/format";
 
 export function AppointmentDateNav({
   date,

@@ -1,6 +1,6 @@
 // Backend contract for departments. Spring Boot serializes to these shapes.
 
-export type DepartmentStatus = "active" | "closed";
+export type DepartmentStatus = "active" | "closed" | "archived";
 
 export interface Department {
   id: string;
@@ -36,16 +36,18 @@ export interface DepartmentStats {
   waiting: number;
 }
 
-// Partial update — only `status` is wired today (the open/close toggle), but
-// the contract is open for editing other fields once the form lands.
 export interface UpdateDepartmentInput {
   id: string;
   status?: DepartmentStatus;
   name?: string;
+  code?: string;
+  description?: string;
   headDoctorName?: string;
+  totalDoctors?: number;
   rooms?: number;
   opensAt?: string;
   closesAt?: string;
+  twentyFourSeven?: boolean;
 }
 
 export interface CreateDepartmentInput {
@@ -58,4 +60,12 @@ export interface CreateDepartmentInput {
   opensAt: string;
   closesAt: string;
   twentyFourSeven?: boolean;
+}
+
+// The editable fields shared by the create and edit forms.
+export type DepartmentFormValues = CreateDepartmentInput;
+
+export interface AssignHeadDoctorInput {
+  id: string;
+  headDoctorName: string;
 }

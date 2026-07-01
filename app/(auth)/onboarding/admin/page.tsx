@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PasswordInput } from "@/components/ui/password-input";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { StepProgress } from "@/components/onboarding/step-progress";
 import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
@@ -26,6 +27,10 @@ export default function AdminAccount() {
     confirmPassword: "",
     agreed: false,
   });
+
+  // Avatar URL is local state — not stored in the onboarding store because
+  // it's an object URL that only lives in this browser session.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   // 2. Added local state to handle the password mismatch error
   const [passwordError, setPasswordError] = useState("");
@@ -64,6 +69,14 @@ export default function AdminAccount() {
       />
 
       <form onSubmit={handleSubmit} className="mt-10 flex-1 space-y-6">
+        <ImageUpload
+          value={avatarUrl}
+          onChange={setAvatarUrl}
+          shape="circle"
+          size={80}
+          label="Profile photo (optional)"
+        />
+
         <FormField label="Administrator Full Name" htmlFor="fullName">
           <Input id="fullName" value={form.fullName}
             onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Dr. Sarah Jenkins" required />

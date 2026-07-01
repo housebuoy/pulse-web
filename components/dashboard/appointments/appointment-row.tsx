@@ -4,7 +4,8 @@ import { Video, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AppointmentStatusBadge } from "./appointment-status-badge";
-import { actionsFor, formatTime } from "@/lib/appointment-utils";
+import { actionsFor } from "@/lib/appointment-utils";
+import { formatTime } from "@/lib/format";
 import type {
   Appointment,
   AppointmentStatus,

@@ -14,7 +14,7 @@ export function LiveQueueCard() {
   const { data: rows = [], isLoading } = useDepartmentQueue();
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="flex items-center justify-between p-5">
         <h2 className="text-base font-bold text-fg">Live Department Queue</h2>
         <button className="text-sm font-medium text-brand hover:underline">

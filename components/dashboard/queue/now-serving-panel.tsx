@@ -23,7 +23,7 @@ export function NowServingPanel({
   isUpdating: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+    <div className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-bold text-fg">Now Serving</h2>
         {canCallNext && (

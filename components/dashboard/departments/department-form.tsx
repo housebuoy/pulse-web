@@ -9,7 +9,7 @@ import { SingleSelect } from "@/components/ui/single-select";
 import { FormField } from "@/components/onboarding/form-field";
 import { TIMES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import type { CreateDepartmentInput } from "@/lib/types/departments";
+import type { DepartmentFormValues } from "@/lib/types/departments";
 
 const fmt = (t: string) => {
   const [h, m] = t.split(":").map(Number);
@@ -23,23 +23,37 @@ type FormErrors = Partial<
 >;
 
 export function DepartmentForm({
+  initialValues,
   onSubmit,
   onCancel,
   isSubmitting,
+  submitLabel = "Create department",
+  pendingLabel = "Creating…",
 }: {
-  onSubmit: (input: CreateDepartmentInput) => void;
+  initialValues?: Partial<DepartmentFormValues>;
+  onSubmit: (values: DepartmentFormValues) => void;
   onCancel: () => void;
   isSubmitting: boolean;
+  submitLabel?: string;
+  pendingLabel?: string;
 }) {
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [headDoctorName, setHeadDoctorName] = useState("");
-  const [totalDoctors, setTotalDoctors] = useState("1");
-  const [rooms, setRooms] = useState("1");
-  const [description, setDescription] = useState("");
-  const [twentyFourSeven, setTwentyFourSeven] = useState(false);
-  const [opensAt, setOpensAt] = useState("08:00");
-  const [closesAt, setClosesAt] = useState("17:00");
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [code, setCode] = useState(initialValues?.code ?? "");
+  const [headDoctorName, setHeadDoctorName] = useState(
+    initialValues?.headDoctorName ?? "",
+  );
+  const [totalDoctors, setTotalDoctors] = useState(
+    String(initialValues?.totalDoctors ?? 1),
+  );
+  const [rooms, setRooms] = useState(String(initialValues?.rooms ?? 1));
+  const [description, setDescription] = useState(
+    initialValues?.description ?? "",
+  );
+  const [twentyFourSeven, setTwentyFourSeven] = useState(
+    initialValues?.twentyFourSeven ?? false,
+  );
+  const [opensAt, setOpensAt] = useState(initialValues?.opensAt ?? "08:00");
+  const [closesAt, setClosesAt] = useState(initialValues?.closesAt ?? "17:00");
   const [errors, setErrors] = useState<FormErrors>({});
 
   const handleSubmit = (e: FormEvent) => {
@@ -219,7 +233,7 @@ export function DepartmentForm({
         </Button>
         <Button type="submit" disabled={isSubmitting}>
           <Plus className="size-4" />
-          {isSubmitting ? "Creating…" : "Create department"}
+          {isSubmitting ? pendingLabel : submitLabel}
         </Button>
       </div>
     </form>

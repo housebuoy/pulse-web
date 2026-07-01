@@ -1,7 +1,6 @@
 "use client";
 
-import { LiveStatusIndicator } from "@/components/dashboard/live-status-indicator";
-import { MetricStat } from "@/components/dashboard/metric-stat";
+import { StatBar } from "@/components/dashboard/shared/stat-bar";
 
 export function QueueSummary({
   waiting,
@@ -13,13 +12,13 @@ export function QueueSummary({
   longestWait: number;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-border bg-surface px-5 py-4 shadow-sm">
-      <div className="flex gap-8">
-        <MetricStat label="Waiting" value={waiting} />
-        <MetricStat label="In consultation" value={serving} />
-        <MetricStat label="Longest wait" value={`${longestWait}m`} />
-      </div>
-      <LiveStatusIndicator interval="5s" />
-    </div>
+    <StatBar
+      tiles={[
+        { label: "Waiting", value: waiting },
+        { label: "In consultation", value: serving },
+        { label: "Longest wait", value: longestWait, unit: "m" },
+      ]}
+      live="5s"
+    />
   );
 }

@@ -45,7 +45,7 @@ export function AppointmentList({
   onAction: (id: string, next: AppointmentStatus) => void;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
       <HeaderRow />
 
       {isLoading && appointments.length === 0 ? (

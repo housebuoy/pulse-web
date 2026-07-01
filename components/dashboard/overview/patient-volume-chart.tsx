@@ -18,7 +18,7 @@ export function PatientVolumeChart() {
   const { data = [], isLoading } = usePatientVolume();
 
   return (
-    <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+    <div className="rounded-xl border border-border bg-surface p-6">
       <h2 className="mb-5 text-base font-bold text-fg">Patient Volume Today</h2>
 
       {isLoading ? (

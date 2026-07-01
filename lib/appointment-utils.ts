@@ -66,21 +66,7 @@ export function isToday(dateKey: string): boolean {
   return dateKey === toDateKey(new Date());
 }
 
-export function formatLongDate(dateKey: string): string {
-  return new Date(`${dateKey}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+// formatLongDate / formatTime moved to lib/format.ts (shared, locale-pinned).
 
 export function countByDepartment(
   appts: Appointment[]

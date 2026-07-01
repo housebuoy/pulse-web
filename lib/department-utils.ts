@@ -7,6 +7,7 @@ export const DEPT_STATUS_META: Record<
 > = {
   active: { label: "Active", tone: "success" },
   closed: { label: "Closed", tone: "neutral" },
+  archived: { label: "Archived", tone: "neutral" },
 };
 
 export function formatHours(d: Department): string {
@@ -30,5 +31,13 @@ export function matchesSearch(d: Department, query: string): boolean {
     d.name.toLowerCase().includes(q) ||
     d.code.toLowerCase().includes(q) ||
     d.headDoctorName.toLowerCase().includes(q)
+  );
+}
+
+// A department can only be hard-deleted once its floor is clear — otherwise
+// the dialog offers Archive (soft status) instead.
+export function canDelete(d: Department): boolean {
+  return (
+    d.waiting === 0 && d.inConsultation === 0 && d.appointmentsToday === 0
   );
 }

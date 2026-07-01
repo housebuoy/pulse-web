@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import * as departmentsApi from "@/lib/api/departments";
 import type {
+  AssignHeadDoctorInput,
   CreateDepartmentInput,
   UpdateDepartmentInput,
 } from "@/lib/types/departments";
@@ -23,6 +24,14 @@ export function useDepartments() {
     refetchInterval: 10_000,
     placeholderData: (prev) => prev,
   });
+}
+
+// Derives a single department from the shared list query instead of firing a
+// second request — selection/edit just need a lookup, not a new fetch.
+export function useDepartment(id: string | undefined) {
+  const query = useDepartments();
+  const department = id ? query.data?.find((d) => d.id === id) : undefined;
+  return { ...query, data: department };
 }
 
 export function useDepartmentStats() {
@@ -50,6 +59,27 @@ export function useCreateDepartment() {
   return useMutation({
     mutationFn: (input: CreateDepartmentInput) =>
       departmentsApi.createDepartment(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.all });
+    },
+  });
+}
+
+export function useAssignHeadDoctor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AssignHeadDoctorInput) =>
+      departmentsApi.assignHeadDoctor(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.all });
+    },
+  });
+}
+
+export function useDeleteDepartment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => departmentsApi.deleteDepartment(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.all });
     },

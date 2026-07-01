@@ -8,6 +8,7 @@ export interface OnboardingData {
   address: string;
   hefraLicense: string;
   document: File | null;
+  logoUrl?: string; // object URL from ImageUpload (not persisted past refresh)
 
   // Step 2 — Departments & operations
   phone: string;
