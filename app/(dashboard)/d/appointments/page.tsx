@@ -7,42 +7,61 @@ import { AppointmentDateNav } from "@/components/dashboard/appointments/appointm
 import { AppointmentFilters } from "@/components/dashboard/appointments/appointment-filters";
 import { AppointmentSummary } from "@/components/dashboard/appointments/appointment-summary";
 import { AppointmentList } from "@/components/dashboard/appointments/appointment-list";
+import { WeekView } from "@/components/appointments/week-view";
+import { MonthView } from "@/components/appointments/month-view";
+import {
+  ViewSwitcher,
+  useAppointmentView,
+} from "@/components/appointments/view-switcher";
 import {
   useAppointments,
   useAppointmentDepartments,
   useAppointmentStats,
+  useAppointmentsRange,
   useUpdateAppointment,
 } from "@/hooks/use-appointments";
 import { countByDepartment, toDateKey } from "@/lib/appointment-utils";
+import { getWeekRange, getMonthRange } from "@/lib/calendar-utils";
 import type { AppointmentStatus } from "@/lib/types/appointments";
 
 function AppointmentsBody() {
-  // Pre-filtered when arriving from a department's "View appointments" link.
   const searchParams = useSearchParams();
   const [date, setDate] = useState(() => toDateKey(new Date()));
   const [departmentId, setDepartmentId] = useState<string>(
     () => searchParams.get("department") ?? "all",
   );
   const [status, setStatus] = useState<AppointmentStatus | "all">("all");
+  const [view, setView] = useAppointmentView();
 
-  // Fetch the whole day once; filter by department/status client-side so the
-  // tab counts stay accurate and switching tabs is instant. The API still
-  // accepts those filters for when the backend wants to do it server-side.
-  const { data: all = [], isLoading } = useAppointments({ date });
+  // List view: single-day fetch (unchanged behaviour).
+  const { data: dayAppts = [], isLoading: dayLoading } = useAppointments({
+    date,
+  });
   const { data: stats } = useAppointmentStats(date);
   const { data: departments = [] } = useAppointmentDepartments();
   const update = useUpdateAppointment();
 
-  const deptCounts = useMemo(() => countByDepartment(all), [all]);
+  // Week / month views: range fetch. Both hooks always run; only one is used.
+  const weekRange = useMemo(() => getWeekRange(date), [date]);
+  const monthRange = useMemo(() => getMonthRange(date), [date]);
 
-  const visible = useMemo(
+  const { data: weekAppts = [], isLoading: weekLoading } = useAppointmentsRange(
+    weekRange.from,
+    weekRange.to,
+  );
+  const { data: monthAppts = [], isLoading: monthLoading } =
+    useAppointmentsRange(monthRange.from, monthRange.to);
+
+  // Apply department + status filters for list view.
+  const deptCounts = useMemo(() => countByDepartment(dayAppts), [dayAppts]);
+  const visibleDay = useMemo(
     () =>
-      all.filter(
+      dayAppts.filter(
         (a) =>
           (departmentId === "all" || a.departmentId === departmentId) &&
-          (status === "all" || a.status === status)
+          (status === "all" || a.status === status),
       ),
-    [all, departmentId, status]
+    [dayAppts, departmentId, status],
   );
 
   const handleAction = (id: string, next: AppointmentStatus) =>
@@ -51,26 +70,51 @@ function AppointmentsBody() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="space-y-6 p-6">
-        <AppointmentDateNav date={date} onChange={setDate} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <AppointmentDateNav date={date} onChange={setDate} view={view} />
+          <ViewSwitcher view={view} onChange={setView} />
+        </div>
 
-        <AppointmentFilters
-          departments={departments}
-          departmentId={departmentId}
-          onDepartmentChange={setDepartmentId}
-          status={status}
-          onStatusChange={setStatus}
-          total={all.length}
-          counts={deptCounts}
-        />
+        {view === "list" && (
+          <>
+            <AppointmentFilters
+              departments={departments}
+              departmentId={departmentId}
+              onDepartmentChange={setDepartmentId}
+              status={status}
+              onStatusChange={setStatus}
+              total={dayAppts.length}
+              counts={deptCounts}
+            />
+            <AppointmentSummary stats={stats} isLoading={dayLoading} />
+            <AppointmentList
+              appointments={visibleDay}
+              isLoading={dayLoading}
+              isMutating={update.isPending}
+              onAction={handleAction}
+            />
+          </>
+        )}
 
-        <AppointmentSummary stats={stats} isLoading={isLoading} />
+        {view === "week" && (
+          <WeekView
+            appointments={weekAppts}
+            date={date}
+            isLoading={weekLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
+        )}
 
-        <AppointmentList
-          appointments={visible}
-          isLoading={isLoading}
-          isMutating={update.isPending}
-          onAction={handleAction}
-        />
+        {view === "month" && (
+          <MonthView
+            appointments={monthAppts}
+            date={date}
+            isLoading={monthLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
+        )}
       </div>
     </div>
   );

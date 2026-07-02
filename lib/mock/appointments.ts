@@ -363,6 +363,20 @@ export function applyUpdate({
   return delay({ ...found });
 }
 
+export function queryAppointmentsRange(
+  from: string,
+  to: string
+): Promise<Appointment[]> {
+  const result = store
+    .filter((a) => {
+      const d = dateKey(new Date(a.scheduledAt));
+      return d >= from && d <= to;
+    })
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+    .map((a) => ({ ...a }));
+  return delay(result);
+}
+
 export function resetAppointments(): void {
   store = seed.map((a) => ({ ...a }));
 }

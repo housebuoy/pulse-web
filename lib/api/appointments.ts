@@ -45,6 +45,17 @@ export async function fetchAppointmentDepartments(): Promise<
   return data;
 }
 
+export async function fetchAppointmentsRange(
+  from: string,
+  to: string
+): Promise<Appointment[]> {
+  if (USE_MOCK) return mock.queryAppointmentsRange(from, to);
+  const { data } = await api.get<Appointment[]>("/appointments", {
+    params: { from, to },
+  });
+  return data;
+}
+
 export async function updateAppointment(
   input: UpdateAppointmentInput
 ): Promise<Appointment> {

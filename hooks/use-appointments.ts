@@ -45,6 +45,14 @@ export function useAppointmentDepartments() {
   });
 }
 
+export function useAppointmentsRange(from: string, to: string) {
+  return useQuery({
+    queryKey: [...keys.all, "range", from, to] as const,
+    queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to),
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useUpdateAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
