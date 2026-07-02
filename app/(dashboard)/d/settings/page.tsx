@@ -5,11 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { SettingsTabs, type SettingsTab } from "@/components/dashboard/settings/settings-tabs";
 import { FacilitySection } from "@/components/dashboard/settings/facility-section";
-import { ProfileSection } from "@/components/dashboard/settings/profile-section";
 import { OperationalSection } from "@/components/dashboard/settings/operational-section";
 import { TeamAccessSection } from "@/components/dashboard/settings/team-access-section";
 
-const VALID_TABS = new Set<SettingsTab>(["facility", "profile", "operational", "team"]);
+const VALID_TABS = new Set<SettingsTab>(["facility", "operational", "team"]);
 
 function SettingsBody() {
   const router = useRouter();
@@ -34,7 +33,6 @@ function SettingsBody() {
 
         <div className={tab === "team" ? "" : "mx-auto w-full max-w-3xl"}>
           {tab === "facility" && <FacilitySection />}
-          {tab === "profile" && <ProfileSection />}
           {tab === "operational" && <OperationalSection />}
           {tab === "team" && <TeamAccessSection />}
         </div>

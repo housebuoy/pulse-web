@@ -2,11 +2,10 @@
 
 import { cn } from "@/lib/utils";
 
-export type SettingsTab = "facility" | "profile" | "operational" | "team";
+export type SettingsTab = "facility" | "operational" | "team";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "facility", label: "Facility" },
-  { id: "profile", label: "Profile & Account" },
   { id: "operational", label: "Operational" },
   { id: "team", label: "Team & Access" },
 ];
