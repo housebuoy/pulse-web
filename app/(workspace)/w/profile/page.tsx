@@ -1,13 +1,22 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
-import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/onboarding/form-field";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { SectionSaveBar } from "@/components/dashboard/settings/section-save-bar";
 import { useJustSaved } from "@/components/dashboard/settings/use-just-saved";
 import { DutyControl } from "@/components/dashboard/staff/duty-control";
+import { NotificationPreferencesCard } from "@/components/dashboard/settings/notification-preferences-card";
+import { PasswordCard } from "@/components/dashboard/settings/password-card";
+import { SessionsCard } from "@/components/dashboard/settings/sessions-card";
+import { TwoFactorCard } from "@/components/dashboard/settings/two-factor-card";
+import { PreferencesCard } from "@/components/dashboard/settings/preferences-card";
+import { DangerZoneCard } from "@/components/dashboard/settings/danger-zone-card";
 import { useStaffMember, useUpdateStaff } from "@/hooks/use-staff";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import type { DutyStatus } from "@/lib/types/staff";
@@ -23,6 +32,7 @@ interface ProfileFormValues {
 
 export default function WorkspaceProfilePage() {
   const session = useWorkspaceSession();
+  const router = useRouter();
   const { data: member, isLoading } = useStaffMember(session.staffId);
   const update = useUpdateStaff();
 
@@ -75,7 +85,8 @@ export default function WorkspaceProfilePage() {
 
       <div className="min-h-0 flex-1 overflow-y-auto p-8">
         <div className="mx-auto flex max-w-xl flex-col gap-6">
-          {/* Profile card — same layout as Settings → Profile & Account */}
+
+          {/* ── Clinical profile (doctor-specific) ── */}
           <form onSubmit={handleSubmit(submit)}>
             <div className="rounded-xl border border-border bg-surface p-6">
               <h2 className="mb-5 text-base font-bold text-fg">Your profile</h2>
@@ -149,7 +160,7 @@ export default function WorkspaceProfilePage() {
             </div>
           </form>
 
-          {/* Duty status — separate card, same style as other settings cards */}
+          {/* ── Duty status (doctor-only) ── */}
           <div className="rounded-xl border border-border bg-surface p-6">
             <h2 className="mb-1 text-base font-bold text-fg">Duty status</h2>
             <p className="mb-4 text-sm text-fg-muted">
@@ -161,6 +172,34 @@ export default function WorkspaceProfilePage() {
               disabled={update.isPending}
             />
           </div>
+
+          {/* ── Shared account sections (identical to admin /d/profile) ── */}
+          <NotificationPreferencesCard />
+          <PasswordCard />
+          <SessionsCard />
+          <TwoFactorCard />
+          <PreferencesCard />
+          <DangerZoneCard />
+
+          {/* ── Log out ── */}
+          <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-5">
+            <span>
+              <span className="block text-sm font-medium text-fg">Sign out</span>
+              <span className="block text-xs text-fg-muted">
+                Sign out of your workspace on this device.
+              </span>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/onboarding/admin")}
+            >
+              <LogOut className="size-4" />
+              Sign out
+            </Button>
+          </div>
+
         </div>
       </div>
     </div>
