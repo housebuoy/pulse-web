@@ -39,7 +39,12 @@ export function SectionSaveBar({
           {label}
         </span>
       )}
-      <Button type="submit" size="sm" disabled={!isDirty || isSaving}>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={!isDirty || isSaving}
+        className="bg-brand text-white hover:bg-brand/90"
+      >
         {isSaving ? "Saving…" : "Save changes"}
       </Button>
     </div>
