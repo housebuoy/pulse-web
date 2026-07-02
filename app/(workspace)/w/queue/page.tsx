@@ -1,0 +1,150 @@
+"use client";
+
+import { useMemo } from "react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Phone,
+  Stethoscope,
+} from "lucide-react";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { StatBar } from "@/components/dashboard/shared/stat-bar";
+import { NowServingPanel } from "@/components/dashboard/queue/now-serving-panel";
+import { QueueList } from "@/components/dashboard/queue/queue-list";
+import {
+  useCallNext,
+  useQueueDepartments,
+  useQueueEntries,
+  useUpdateQueueStatus,
+} from "@/hooks/use-queue";
+import { useAppointments } from "@/hooks/use-appointments";
+import { useWorkspaceSession } from "@/hooks/use-workspace-session";
+import { compareWaiting, minutesSince } from "@/lib/queue-utils";
+import { toDateKey } from "@/lib/appointment-utils";
+import type { QueueEntry } from "@/lib/types/queue";
+
+export default function WorkspaceQueuePage() {
+  const session = useWorkspaceSession();
+  const today = toDateKey(new Date());
+
+  // Queue — scoped to the doctor's department; all entries fetched once.
+  const { data: departments = [] } = useQueueDepartments();
+  const { data: allEntries = [], isLoading } = useQueueEntries(
+    session.departmentId,
+  );
+
+  // Today's appointments for the "My Day" stat bar.
+  const { data: todayAppts = [] } = useAppointments({ date: today });
+  const myAppts = useMemo(
+    () => todayAppts.filter((a) => a.doctorName === session.name),
+    [todayAppts, session.name],
+  );
+  const seen = myAppts.filter((a) => a.status === "completed").length;
+
+  const callNext = useCallNext();
+  const updateStatus = useUpdateQueueStatus();
+
+  // In consultation — only entries this doctor has called.
+  const serving = useMemo(
+    () =>
+      allEntries.filter(
+        (e) => e.status === "in_consultation" && e.clinician === session.name,
+      ),
+    [allEntries, session.name],
+  );
+
+  // Waiting list — full department queue (doctor can call any).
+  const waiting = useMemo(
+    () =>
+      allEntries
+        .filter((e) => e.status === "waiting")
+        .sort(compareWaiting),
+    [allEntries],
+  );
+
+  const longestWait = waiting.reduce(
+    (max, e) => Math.max(max, minutesSince(e.checkInAt)),
+    0,
+  );
+
+  const isMutating = callNext.isPending || updateStatus.isPending;
+
+  const handleCall = (entry: QueueEntry) =>
+    callNext.mutate({
+      departmentId: entry.departmentId,
+      entryId: entry.id,
+    });
+
+  return (
+    <>
+      <DashboardHeader title="My Queue" />
+
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex flex-col gap-6">
+          {/* My Day — at-a-glance numbers for this doctor's shift */}
+          <StatBar
+            tiles={[
+              {
+                label: "Appts today",
+                value: myAppts.length,
+                icon: CalendarDays,
+              },
+              {
+                label: "Patients seen",
+                value: seen,
+                icon: CheckCircle2,
+              },
+              {
+                label: "Now serving",
+                value: serving.length,
+                icon: Stethoscope,
+              },
+              {
+                label: "Waiting",
+                value: waiting.length,
+                icon: Phone,
+              },
+              {
+                label: "Longest wait",
+                value: longestWait,
+                unit: "m",
+              },
+            ]}
+            isLoading={isLoading}
+            live="5s"
+          />
+
+          {/* Now Serving — only this doctor's active patients */}
+          <NowServingPanel
+            serving={serving}
+            canCallNext={waiting.length > 0}
+            onCallNext={() =>
+              callNext.mutate({ departmentId: session.departmentId })
+            }
+            onComplete={(entry) =>
+              updateStatus.mutate({ entryId: entry.id, status: "completed" })
+            }
+            onNoShow={(entry) =>
+              updateStatus.mutate({ entryId: entry.id, status: "no_show" })
+            }
+            isCalling={callNext.isPending}
+            isUpdating={updateStatus.isPending}
+          />
+
+          {/* Department waiting list — all patients the doctor can call next */}
+          <QueueList
+            entries={waiting}
+            departments={departments}
+            showDepartment={false}
+            onCall={handleCall}
+            onSkip={(entry) =>
+              updateStatus.mutate({ entryId: entry.id, status: "skipped" })
+            }
+            isLoading={isLoading}
+            isMutating={isMutating}
+          />
+        </div>
+      </div>
+    </>
+  );
+}
