@@ -37,17 +37,7 @@ export function AppointmentRow({
 
       {/* Patient + reason */}
       <div className="col-span-10 lg:col-span-3">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-fg">
-            {appointment.patientName}
-          </span>
-          {isEmergency && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-danger">
-              <AlertTriangle className="h-3 w-3" />
-              Emergency
-            </span>
-          )}
-        </div>
+        <span className="font-medium text-fg">{appointment.patientName}</span>
         <div className="truncate text-xs text-fg-muted">
           {appointment.reference}
           {appointment.reason ? ` · ${appointment.reason}` : ""}
@@ -74,7 +64,13 @@ export function AppointmentRow({
       </div>
 
       {/* Status */}
-      <div className="col-span-4 lg:col-span-2">
+      <div className="col-span-4 flex items-center gap-1.5 lg:col-span-2">
+        {isEmergency && (
+          <AlertTriangle
+            className="h-3.5 w-3.5 shrink-0 text-danger"
+            aria-label="Emergency priority"
+          />
+        )}
         <AppointmentStatusBadge status={appointment.status} />
       </div>
 
