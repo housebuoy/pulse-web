@@ -5,12 +5,12 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AppointmentDateNav } from "@/components/dashboard/appointments/appointment-date-nav";
 import { AppointmentList } from "@/components/dashboard/appointments/appointment-list";
 import { StatBar } from "@/components/dashboard/shared/stat-bar";
-import { WeekView } from "@/components/appointments/week-view";
-import { MonthView } from "@/components/appointments/month-view";
+import { WeekView } from "@/components/dashboard/appointments/week-view";
+import { MonthView } from "@/components/dashboard/appointments/month-view";
 import {
   ViewSwitcher,
   useAppointmentView,
-} from "@/components/appointments/view-switcher";
+} from "@/components/dashboard/appointments/view-switcher";
 import {
   useAppointments,
   useAppointmentsRange,
@@ -76,26 +76,25 @@ export default function WorkspaceAppointmentsPage() {
             <ViewSwitcher view={view} onChange={setView} />
           </div>
 
+          <StatBar
+            tiles={[
+              { label: "Total", value: mine.length },
+              { label: "Scheduled", value: scheduled },
+              { label: "Confirmed", value: confirmed },
+              { label: "Checked in", value: checkedIn },
+              { label: "Completed", value: completed },
+              { label: "No-show", value: noShow },
+            ]}
+            isLoading={isLoading}
+          />
+
           {view === "list" && (
-            <>
-              <StatBar
-                tiles={[
-                  { label: "Total", value: mine.length },
-                  { label: "Scheduled", value: scheduled },
-                  { label: "Confirmed", value: confirmed },
-                  { label: "Checked in", value: checkedIn },
-                  { label: "Completed", value: completed },
-                  { label: "No-show", value: noShow },
-                ]}
-                isLoading={isLoading}
-              />
-              <AppointmentList
-                appointments={mine}
-                isLoading={isLoading}
-                isMutating={update.isPending}
-                onAction={handleAction}
-              />
-            </>
+            <AppointmentList
+              appointments={mine}
+              isLoading={isLoading}
+              isMutating={update.isPending}
+              onAction={handleAction}
+            />
           )}
 
           {view === "week" && (

@@ -1,18 +1,18 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AppointmentDateNav } from "@/components/dashboard/appointments/appointment-date-nav";
 import { AppointmentFilters } from "@/components/dashboard/appointments/appointment-filters";
 import { AppointmentSummary } from "@/components/dashboard/appointments/appointment-summary";
 import { AppointmentList } from "@/components/dashboard/appointments/appointment-list";
-import { WeekView } from "@/components/appointments/week-view";
-import { MonthView } from "@/components/appointments/month-view";
+import { WeekView } from "@/components/dashboard/appointments/week-view";
+import { MonthView } from "@/components/dashboard/appointments/month-view";
 import {
   ViewSwitcher,
   useAppointmentView,
-} from "@/components/appointments/view-switcher";
+} from "@/components/dashboard/appointments/view-switcher";
 import {
   useAppointments,
   useAppointmentDepartments,
@@ -52,16 +52,26 @@ function AppointmentsBody() {
   const { data: monthAppts = [], isLoading: monthLoading } =
     useAppointmentsRange(monthRange.from, monthRange.to);
 
-  // Apply department + status filters for list view.
+  // Shared department + status filters — applied identically across List,
+  // Week, and Month so switching views never changes what's "in scope".
   const deptCounts = useMemo(() => countByDepartment(dayAppts), [dayAppts]);
+  const matchesFilter = useCallback(
+    (a: { departmentId: string; status: AppointmentStatus }) =>
+      (departmentId === "all" || a.departmentId === departmentId) &&
+      (status === "all" || a.status === status),
+    [departmentId, status],
+  );
   const visibleDay = useMemo(
-    () =>
-      dayAppts.filter(
-        (a) =>
-          (departmentId === "all" || a.departmentId === departmentId) &&
-          (status === "all" || a.status === status),
-      ),
-    [dayAppts, departmentId, status],
+    () => dayAppts.filter(matchesFilter),
+    [dayAppts, matchesFilter],
+  );
+  const visibleWeek = useMemo(
+    () => weekAppts.filter(matchesFilter),
+    [weekAppts, matchesFilter],
+  );
+  const visibleMonth = useMemo(
+    () => monthAppts.filter(matchesFilter),
+    [monthAppts, matchesFilter],
   );
 
   const handleAction = (id: string, next: AppointmentStatus) =>
@@ -75,30 +85,29 @@ function AppointmentsBody() {
           <ViewSwitcher view={view} onChange={setView} />
         </div>
 
+        <AppointmentFilters
+          departments={departments}
+          departmentId={departmentId}
+          onDepartmentChange={setDepartmentId}
+          status={status}
+          onStatusChange={setStatus}
+          total={dayAppts.length}
+          counts={deptCounts}
+        />
+        <AppointmentSummary stats={stats} isLoading={dayLoading} />
+
         {view === "list" && (
-          <>
-            <AppointmentFilters
-              departments={departments}
-              departmentId={departmentId}
-              onDepartmentChange={setDepartmentId}
-              status={status}
-              onStatusChange={setStatus}
-              total={dayAppts.length}
-              counts={deptCounts}
-            />
-            <AppointmentSummary stats={stats} isLoading={dayLoading} />
-            <AppointmentList
-              appointments={visibleDay}
-              isLoading={dayLoading}
-              isMutating={update.isPending}
-              onAction={handleAction}
-            />
-          </>
+          <AppointmentList
+            appointments={visibleDay}
+            isLoading={dayLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
         )}
 
         {view === "week" && (
           <WeekView
-            appointments={weekAppts}
+            appointments={visibleWeek}
             date={date}
             isLoading={weekLoading}
             isMutating={update.isPending}
@@ -108,7 +117,7 @@ function AppointmentsBody() {
 
         {view === "month" && (
           <MonthView
-            appointments={monthAppts}
+            appointments={visibleMonth}
             date={date}
             isLoading={monthLoading}
             isMutating={update.isPending}
