@@ -26,7 +26,9 @@ import type { AppointmentStatus } from "@/lib/types/appointments";
 
 function AppointmentsBody() {
   const searchParams = useSearchParams();
-  const [date, setDate] = useState(() => toDateKey(new Date()));
+  const [date, setDate] = useState(
+    () => searchParams.get("date") ?? toDateKey(new Date()),
+  );
   const [departmentId, setDepartmentId] = useState<string>(
     () => searchParams.get("department") ?? "all",
   );

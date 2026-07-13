@@ -3,6 +3,7 @@ import type {
   AppointmentStatus,
 } from "@/lib/types/appointments";
 import type { BadgeTone } from "@/components/dashboard/status-badge";
+import { formatShortDate, formatTime } from "@/lib/format";
 
 export const STATUS_META: Record<
   AppointmentStatus,
@@ -75,4 +76,20 @@ export function countByDepartment(
     acc[a.departmentId] = (acc[a.departmentId] ?? 0) + 1;
     return acc;
   }, {});
+}
+
+// Matches date, patient, time, status, doctor, and department — the fields
+// the global search palette advertises for Appointments results.
+export function matchesSearch(appointment: Appointment, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    appointment.patientName.toLowerCase().includes(q) ||
+    appointment.reference.toLowerCase().includes(q) ||
+    appointment.doctorName.toLowerCase().includes(q) ||
+    appointment.departmentName.toLowerCase().includes(q) ||
+    STATUS_META[appointment.status].label.toLowerCase().includes(q) ||
+    formatShortDate(appointment.scheduledAt).toLowerCase().includes(q) ||
+    formatTime(appointment.scheduledAt).toLowerCase().includes(q)
+  );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AppointmentDateNav } from "@/components/dashboard/appointments/appointment-date-nav";
 import { AppointmentList } from "@/components/dashboard/appointments/appointment-list";
@@ -21,9 +22,12 @@ import { toDateKey } from "@/lib/appointment-utils";
 import { getWeekRange, getMonthRange } from "@/lib/calendar-utils";
 import type { AppointmentStatus } from "@/lib/types/appointments";
 
-export default function WorkspaceAppointmentsPage() {
+function AppointmentsBody() {
+  const searchParams = useSearchParams();
   const session = useWorkspaceSession();
-  const [date, setDate] = useState(() => toDateKey(new Date()));
+  const [date, setDate] = useState(
+    () => searchParams.get("date") ?? toDateKey(new Date()),
+  );
   const [view, setView] = useAppointmentView();
   const update = useUpdateAppointment();
 
@@ -66,58 +70,65 @@ export default function WorkspaceAppointmentsPage() {
   const noShow = mine.filter((a) => a.status === "no_show").length;
 
   return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <AppointmentDateNav date={date} onChange={setDate} view={view} />
+          <ViewSwitcher view={view} onChange={setView} />
+        </div>
+
+        <StatBar
+          tiles={[
+            { label: "Total", value: mine.length },
+            { label: "Scheduled", value: scheduled },
+            { label: "Confirmed", value: confirmed },
+            { label: "Checked in", value: checkedIn },
+            { label: "Completed", value: completed },
+            { label: "No-show", value: noShow },
+          ]}
+          isLoading={isLoading}
+        />
+
+        {view === "list" && (
+          <AppointmentList
+            appointments={mine}
+            isLoading={isLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
+        )}
+
+        {view === "week" && (
+          <WeekView
+            appointments={weekMine}
+            date={date}
+            isLoading={weekLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
+        )}
+
+        {view === "month" && (
+          <MonthView
+            appointments={monthMine}
+            date={date}
+            isLoading={monthLoading}
+            isMutating={update.isPending}
+            onAction={handleAction}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function WorkspaceAppointmentsPage() {
+  return (
     <>
       <DashboardHeader title="My Appointments" />
-
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <AppointmentDateNav date={date} onChange={setDate} view={view} />
-            <ViewSwitcher view={view} onChange={setView} />
-          </div>
-
-          <StatBar
-            tiles={[
-              { label: "Total", value: mine.length },
-              { label: "Scheduled", value: scheduled },
-              { label: "Confirmed", value: confirmed },
-              { label: "Checked in", value: checkedIn },
-              { label: "Completed", value: completed },
-              { label: "No-show", value: noShow },
-            ]}
-            isLoading={isLoading}
-          />
-
-          {view === "list" && (
-            <AppointmentList
-              appointments={mine}
-              isLoading={isLoading}
-              isMutating={update.isPending}
-              onAction={handleAction}
-            />
-          )}
-
-          {view === "week" && (
-            <WeekView
-              appointments={weekMine}
-              date={date}
-              isLoading={weekLoading}
-              isMutating={update.isPending}
-              onAction={handleAction}
-            />
-          )}
-
-          {view === "month" && (
-            <MonthView
-              appointments={monthMine}
-              date={date}
-              isLoading={monthLoading}
-              isMutating={update.isPending}
-              onAction={handleAction}
-            />
-          )}
-        </div>
-      </div>
+      <Suspense fallback={<div className="min-h-0 flex-1" />}>
+        <AppointmentsBody />
+      </Suspense>
     </>
   );
 }
