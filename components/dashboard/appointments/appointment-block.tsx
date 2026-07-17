@@ -9,12 +9,12 @@ import { cn } from "@/lib/utils";
 import type { Appointment, AppointmentStatus } from "@/lib/types/appointments";
 
 const BLOCK_BG: Record<AppointmentStatus, string> = {
-  scheduled: "bg-brand/8 border-brand/20 text-brand",
-  confirmed: "bg-success/8 border-success/20 text-success",
-  checked_in: "bg-warning/8 border-warning/20 text-warning",
-  completed: "bg-surface-muted border-border text-fg-muted",
-  cancelled: "bg-surface-muted border-border text-fg-placeholder",
-  no_show: "bg-danger/8 border-danger/20 text-danger",
+  confirmed: "bg-brand/8 border-brand/20 text-brand",
+  checked_in: "bg-success/8 border-success/20 text-success",
+  no_show: "bg-warning/8 border-warning/20 text-warning",
+  scheduled: "bg-surface-muted border-border text-fg-muted",
+  completed: "bg-surface-muted border-border text-fg-placeholder",
+  cancelled: "bg-danger/8 border-danger/20 text-danger",
 };
 
 export function AppointmentBlock({

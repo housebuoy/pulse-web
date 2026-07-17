@@ -16,7 +16,7 @@ import {
 import { addDays, isToday, toDateKey } from "@/lib/appointment-utils";
 import { formatLongDate } from "@/lib/format";
 import { formatWeekRange, formatMonthYear } from "@/lib/calendar-utils";
-import type { AppointmentView } from "@/components/appointments/view-switcher";
+import type { AppointmentView } from "@/components/dashboard/appointments/view-switcher";
 
 export function AppointmentDateNav({
   date,
