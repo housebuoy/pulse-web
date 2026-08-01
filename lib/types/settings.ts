@@ -16,9 +16,20 @@ import type { StaffRole } from "@/lib/types/staff";
 
 export type FacilityType = "hospital" | "clinic" | "health_center" | "diagnostic_center";
 
+// Grace-period account status. "active_pending_docs" means the facility is
+// live but still owes a HeFRA verification document — the frontend only
+// ever displays this (banner/block); actual suspension is backend-enforced.
+export type FacilityAccountStatus = "active" | "active_pending_docs" | "suspended";
+
 export interface FacilityProfile
   extends Omit<OnboardingData, "document" | "adminEmail"> {
   facilityType: FacilityType;
+  status: FacilityAccountStatus;
+  /** Grace-period deadline, set when status is "active_pending_docs". */
+  hefraDueDate?: string; // ISO date
+  /** Object URL from the settings-page document uploader (mock-only; not
+   *  persisted past refresh, same caveat as logoUrl). */
+  hefraDocumentUrl?: string;
 }
 
 export type UpdateFacilityInput = Partial<FacilityProfile>;

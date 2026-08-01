@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Building2 } from "lucide-react";
+import { ArrowRight, Building2, CloudUpload, ShieldAlert } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { SingleSelect } from "@/components/ui/single-select";
@@ -13,6 +13,7 @@ import { SectionSaveBar } from "./section-save-bar";
 import { useJustSaved } from "./use-just-saved";
 import { useFacility, useUpdateFacility } from "@/hooks/use-settings";
 import { DEPARTMENTS, REGIONS } from "@/lib/constants";
+import { formatShortDate } from "@/lib/format";
 import type { FacilityProfile, FacilityType } from "@/lib/types/settings";
 
 const FACILITY_TYPE_LABEL: Record<FacilityType, string> = {
@@ -55,13 +56,23 @@ export function FacilitySection() {
       duration: "",
       operatingHours: { alwaysOpen: false, schedules: [] },
       logoUrl: undefined,
+      status: "active",
+      hefraDocumentUrl: undefined,
     },
   });
 
   const [justSaved, markSaved] = useJustSaved(isDirty);
 
   const submit = (values: FacilityProfile) => {
-    update.mutate(values, { onSuccess: (saved) => { reset(saved); markSaved(); } });
+    // Submitting a HeFRA document while in the grace period resolves it —
+    // mock-only stand-in for the backend clearing the flag once it's
+    // actually reviewed the document.
+    const resolved =
+      values.hefraDocumentUrl && facility?.status === "active_pending_docs";
+    update.mutate(
+      { ...values, status: resolved ? "active" : values.status },
+      { onSuccess: (saved) => { reset(saved); markSaved(); } },
+    );
   };
 
   if (isLoading || !facility) {
@@ -70,6 +81,63 @@ export function FacilitySection() {
 
   return (
     <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-6">
+      {facility.status !== "active" && (
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-6">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
+              <ShieldAlert className="size-4.5" />
+            </span>
+            <div>
+              <h2 className="text-base font-bold text-fg">HeFRA verification</h2>
+              <p className="mt-0.5 text-sm text-fg-muted">
+                {facility.status === "suspended"
+                  ? "Your workspace is suspended pending this document."
+                  : facility.hefraDueDate
+                    ? `Submit by ${formatShortDate(facility.hefraDueDate)} or your workspace will be suspended.`
+                    : "A valid HeFRA license document is required."}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <Controller
+              control={control}
+              name="hefraDocumentUrl"
+              render={({ field }) => (
+                <label
+                  htmlFor="hefraDocumentUpload"
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed border-warning/40 bg-surface px-4 py-3 transition-colors hover:bg-warning/5"
+                >
+                  <CloudUpload className="size-5 shrink-0 text-warning" />
+                  <span className="text-sm text-fg-secondary">
+                    {field.value ? (
+                      <span className="font-medium text-fg">
+                        Document attached — save to submit
+                      </span>
+                    ) : (
+                      <>
+                        <span className="font-medium text-brand">Click to upload</span>{" "}
+                        your HeFRA license document (PDF or image, max 5MB)
+                      </>
+                    )}
+                  </span>
+                  <input
+                    id="hefraDocumentUpload"
+                    type="file"
+                    accept=".pdf,image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) field.onChange(URL.createObjectURL(file));
+                    }}
+                  />
+                </label>
+              )}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-border bg-surface p-6">
         <h2 className="mb-5 text-base font-bold text-fg">Facility profile</h2>
 

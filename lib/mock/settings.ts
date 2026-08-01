@@ -25,9 +25,17 @@ function delay<T>(value: T, ms = 160): Promise<T> {
 
 // ---- Facility — same identity as lib/mock/dashboard.ts's mockFacility ----
 
+// Defaults to the grace-period state so the banner (components/dashboard/
+// facility-status-banner.tsx) is visible out of the box on /d — that's the
+// more interesting state to have front and center for a preview. To see
+// the blocking "suspended" state instead, append ?facilityStatus=suspended
+// to any /d/* URL (a dev-only override read in facility-status-gate.tsx;
+// it doesn't touch this mock value).
 let facility: FacilityProfile = {
   hospitalName: "KNUST University Hospital",
   facilityType: "hospital",
+  status: "active_pending_docs",
+  hefraDueDate: new Date(Date.now() + 12 * 86_400_000).toISOString(),
   region: "Ashanti",
   address: "KNUST Campus, Kumasi",
   hefraLicense: "HFR-2024-0091",
