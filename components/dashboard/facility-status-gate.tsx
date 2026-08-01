@@ -26,7 +26,7 @@ function FacilityStatusGateBody({ children }: { children: ReactNode }) {
       {status === "active_pending_docs" && (
         <FacilityStatusBanner dueDate={facility?.hefraDueDate} />
       )}
-      <div className="flex flex-1 overflow-hidden">{children}</div>
+      <div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
@@ -34,7 +34,7 @@ function FacilityStatusGateBody({ children }: { children: ReactNode }) {
 export function FacilityStatusGate({ children }: { children: ReactNode }) {
   return (
     <Suspense
-      fallback={<div className="flex h-screen flex-col overflow-hidden">{children}</div>}
+      fallback={<div className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">{children}</div>}
     >
       <FacilityStatusGateBody>{children}</FacilityStatusGateBody>
     </Suspense>

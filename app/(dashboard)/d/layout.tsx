@@ -9,7 +9,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <RequireRole allow={["admin"]}>
       <FacilityStatusGate>
         <TooltipProvider>
-          <div className="flex h-full overflow-hidden bg-surface-subtle print:h-auto print:overflow-visible">
+          <div className="flex h-full w-full overflow-hidden bg-surface-subtle print:h-auto print:overflow-visible">
             <AppSidebar />
             <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
               {children}
