@@ -12,7 +12,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthState } from "@/hooks/use-workspace-session";
-import { useIsOnboardingApproved } from "@/hooks/use-access-request";
+import { useOnboardingApproval } from "@/hooks/use-access-request";
 import { roleHome } from "@/lib/mock/auth";
 import { FacilitySetupStep } from "@/components/onboarding/steps/facility-setup-step";
 import { DepartmentsStep } from "@/components/onboarding/steps/departments-step";
@@ -25,8 +25,9 @@ const STEPS: OnboardingStep[] = ["facility-setup", "departments", "admin", "veri
 function OnboardingBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { session } = useAuthState();
-  const approved = useIsOnboardingApproved();
+  const { session, isResolved: sessionResolved } = useAuthState();
+  const { approved, isResolved: approvalResolved } = useOnboardingApproval();
+  const isResolved = sessionResolved && approvalResolved;
 
   const stepParam = searchParams.get("step");
   const step: OnboardingStep = STEPS.includes(stepParam as OnboardingStep)
@@ -34,14 +35,18 @@ function OnboardingBody() {
     : "facility-setup";
 
   useEffect(() => {
+    // Don't act on the placeholder "no session / not approved" defaults
+    // before the real client-side read lands — see the note in
+    // hooks/use-workspace-session.ts for why that's not just paranoia.
+    if (!isResolved) return;
     if (session) {
       router.replace(roleHome(session.role));
     } else if (!approved) {
       router.replace("/request-access");
     }
-  }, [session, approved, router]);
+  }, [isResolved, session, approved, router]);
 
-  if (session || !approved) return null;
+  if (!isResolved || session || !approved) return null;
 
   const goTo = (next: OnboardingStep) => router.push(`/onboarding?step=${next}`);
 

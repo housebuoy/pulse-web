@@ -8,6 +8,12 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { OtpInput } from "@/components/ui/otp-input";
 import { ResendTimer } from "@/components/onboarding/resend-timer";
 import { FormField } from "@/components/onboarding/form-field";
+import {
+  MOCK_DOCTOR_SESSION,
+  finalizeLogin,
+  markDeviceTrusted,
+  tokenForSession,
+} from "@/lib/mock/auth";
 
 type Step = "otp" | "password" | "done";
 
@@ -52,7 +58,14 @@ export default function ActivatePage() {
         </p>
         <Button
           className="mt-6 h-12 w-full shadow-brand"
-          onClick={() => router.push("/w/queue")}
+          onClick={() => {
+            // The invite/OTP/password steps above are this account's first
+            // sign-in — establish the same session login() would, so /w's
+            // RequireRole guard lets them straight through.
+            finalizeLogin(tokenForSession(MOCK_DOCTOR_SESSION));
+            markDeviceTrusted();
+            router.push("/w/queue");
+          }}
         >
           Open my workspace
         </Button>

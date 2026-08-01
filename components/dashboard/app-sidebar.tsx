@@ -20,6 +20,7 @@ import {
 import { useCurrentFacility, useCurrentUser } from "@/hooks/use-dashboard";
 import { useFacility, useProfile } from "@/hooks/use-settings";
 import { AppShellSidebar } from "@/components/shell/app-sidebar";
+import { clearSession } from "@/lib/mock/auth";
 
 const navItems = [
   { label: "Overview", href: "/d/overview", icon: LayoutGrid },
@@ -65,10 +66,8 @@ export function AppSidebar() {
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {
-              if (typeof window !== "undefined") {
-                localStorage.removeItem("pulse_token");
-              }
-              window.location.href = "/onboarding/admin";
+              clearSession();
+              window.location.href = "/login";
             }}
           >
             <LogOut className="size-4" />

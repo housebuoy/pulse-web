@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import { AppShellSidebar } from "@/components/shell/app-sidebar";
+import { clearSession } from "@/lib/mock/auth";
 
 const NAV = [
   { label: "My Queue", href: "/w/queue", icon: ListOrdered },
@@ -50,7 +51,10 @@ export function WorkspaceSidebar() {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
-            onClick={() => router.push("/onboarding/admin")}
+            onClick={() => {
+              clearSession();
+              router.push("/login");
+            }}
           >
             <LogOut className="size-4" />
             Log out

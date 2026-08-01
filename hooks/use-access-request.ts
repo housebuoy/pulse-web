@@ -1,24 +1,38 @@
 "use client";
 
 // Gates /onboarding on a mock approval token — see lib/mock/access-request.ts.
-// Same useSyncExternalStore pattern as hooks/use-workspace-session.ts, for
-// the same reason: localStorage is an external store that can differ
-// between server and client, and this reads it synchronously on the first
-// client render rather than via a setState-in-effect.
+// Same useState+effect shape as hooks/use-workspace-session.ts's
+// useAuthState, and for the same reason: useSyncExternalStore's
+// hydration-mismatch self-correction is not guaranteed to land before a
+// consuming effect runs, so a redirect-on-"not approved" effect can fire
+// on the transiently-wrong default and navigate away before the real
+// value arrives. `isResolved` lets the caller wait for the real read.
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { getApprovalToken } from "@/lib/mock/access-request";
 
-function subscribe(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
+export interface AccessRequestState {
+  approved: boolean;
+  isResolved: boolean;
 }
 
-function getServerSnapshot(): string | null {
-  return null;
-}
+export function useOnboardingApproval(): AccessRequestState {
+  const [approved, setApproved] = useState(false);
+  const [isResolved, setIsResolved] = useState(false);
 
-export function useIsOnboardingApproved(): boolean {
-  const token = useSyncExternalStore(subscribe, getApprovalToken, getServerSnapshot);
-  return !!token;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setApproved(!!getApprovalToken());
+    setIsResolved(true);
+
+    function onStorage(e: StorageEvent) {
+      if (e.key === "pulse_onboarding_token") {
+        setApproved(!!getApprovalToken());
+      }
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  return { approved, isResolved };
 }
