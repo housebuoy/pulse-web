@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { OperatingHoursValue } from "@/components/onboarding/operating-hours";
 
 export interface OnboardingData {
@@ -6,9 +7,9 @@ export interface OnboardingData {
   hospitalName: string;
   region: string;
   address: string;
-  hefraLicense: string;
-  document: File | null;
-  logoUrl?: string; // object URL from ImageUpload (not persisted past refresh)
+  hefraLicense: string; // optional — see FacilitySetupStep
+  document: File | null; // optional — see FacilitySetupStep; not persisted, see below
+  logoUrl?: string; // required — see FacilitySetupStep
 
   // Step 2 — Departments & operations
   phone: string;
@@ -17,6 +18,10 @@ export interface OnboardingData {
   capacity: string;
   duration: string;
   operatingHours: OperatingHoursValue;
+
+  // Step 3 — Administrator account (email only; password is deliberately
+  // never persisted here, even to sessionStorage — see AdminStep)
+  adminEmail: string;
 }
 
 interface OnboardingStore {
@@ -48,11 +53,30 @@ const initialData: OnboardingData = {
       },
     ],
   },
+
+  adminEmail: "",
 };
 
-export const useOnboardingStore = create<OnboardingStore>((set) => ({
-  data: initialData,
-  updateData: (fields) =>
-    set((state) => ({ data: { ...state.data, ...fields } })),
-  reset: () => set({ data: initialData }),
-}));
+// Persisted to sessionStorage (not localStorage — this is a single in-
+// progress signup, not something that should outlive the tab) so the
+// /onboarding?step= route actually survives a refresh: the step comes back
+// from the URL, the form data comes back from here. `document` is a raw
+// File, which isn't JSON-serializable across a reload, so it's excluded —
+// harmless now that the HeFRA document is optional (FacilitySetupStep).
+export const useOnboardingStore = create<OnboardingStore>()(
+  persist(
+    (set) => ({
+      data: initialData,
+      updateData: (fields) =>
+        set((state) => ({ data: { ...state.data, ...fields } })),
+      reset: () => set({ data: initialData }),
+    }),
+    {
+      name: "pulse-onboarding",
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        data: { ...state.data, document: null },
+      }),
+    },
+  ),
+);

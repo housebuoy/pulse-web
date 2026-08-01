@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StepProgress } from "@/components/onboarding/step-progress";
@@ -15,7 +14,7 @@ import {
   type OnboardingData,
 } from "@/store/use-onboarding-store";
 
-export default function FacilityOperations() {
+export function DepartmentsStep({ onNext }: { onNext: () => void }) {
   const router = useRouter();
   const formData = useOnboardingStore((state) => state.data);
   const updateData = useOnboardingStore((state) => state.updateData);
@@ -25,13 +24,12 @@ export default function FacilityOperations() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // persist, then:
-    router.push("/onboarding/admin");
+    onNext();
   };
 
   return (
     <>
-      <StepProgress current={2} onBack={() => router.back()} />
+      <StepProgress current={2} total={3} onBack={() => router.back()} />
       <StepHeader
         title="How does your facility operate?"
         description="Configure your public-facing operational details."

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,11 +13,15 @@ import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { useOnboardingStore } from "@/store/use-onboarding-store";
 
-export default function AdminAccount() {
+export function AdminStep({ onNext }: { onNext: () => void }) {
   const router = useRouter();
-  const onboardingData = useOnboardingStore((state) => state.data);
+  const updateData = useOnboardingStore((state) => state.updateData);
 
-  // 1. Added confirmPassword to the initial state
+  // Password is deliberately kept local-only — never written to the
+  // onboarding store (and therefore never to sessionStorage), even though
+  // that means it doesn't survive a refresh on this step. adminEmail is
+  // non-sensitive and IS persisted, so verify-email can address the code
+  // it "sends" even after a refresh.
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -31,13 +34,11 @@ export default function AdminAccount() {
   // Avatar URL is local state — not stored in the onboarding store because
   // it's an object URL that only lives in this browser session.
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  
-  // 2. Added local state to handle the password mismatch error
+
   const [passwordError, setPasswordError] = useState("");
 
   const set = (k: keyof typeof form, v: unknown) => {
     setForm((p) => ({ ...p, [k]: v }));
-    // Clear the error as soon as the user starts typing again
     if (k === "confirmPassword" || k === "password") {
       setPasswordError("");
     }
@@ -45,24 +46,20 @@ export default function AdminAccount() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 3. Catch the mismatch before doing anything else
+
     if (form.password !== form.confirmPassword) {
       setPasswordError("Passwords do not match.");
       return;
     }
-
     if (!form.agreed) return;
 
-    const payload = { ...onboardingData, ...form };
-
-    // TODO: create account, then router.push("/dashboard")
-    console.log("Account created successfully", payload);
+    updateData({ adminEmail: form.email });
+    onNext();
   };
 
   return (
     <>
-      <StepProgress current={3} onBack={() => router.back()} />
+      <StepProgress current={3} total={3} onBack={() => router.back()} />
       <StepHeader
         title="Create administrator account"
         description="This account will manage staff, doctors, and system settings."
@@ -93,7 +90,6 @@ export default function AdminAccount() {
           </FormField>
         </div>
 
-        {/* Password Fields stacked vertically */}
         <div className="space-y-6">
           <FormField label="Secure Password" htmlFor="password">
             <PasswordInput id="password" value={form.password}
@@ -103,7 +99,6 @@ export default function AdminAccount() {
             </p>
           </FormField>
 
-          {/* 4. The new Confirm Password field mapped to the error prop */}
           <FormField label="Confirm Password" htmlFor="confirmPassword" error={passwordError}>
             <PasswordInput id="confirmPassword" value={form.confirmPassword}
               onChange={(e) => set("confirmPassword", e.target.value)} placeholder="••••••••" required />

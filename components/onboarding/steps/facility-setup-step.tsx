@@ -1,8 +1,8 @@
-// app/(auth)/onboarding/page.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { StepProgress } from "@/components/onboarding/step-progress";
@@ -10,43 +10,36 @@ import { StepHeader } from "@/components/onboarding/step-header";
 import { FormField } from "@/components/onboarding/form-field";
 import { FileUpload } from "@/components/onboarding/file-upload";
 import { ImageUpload } from "@/components/ui/image-upload";
-import { IncompleteSetupDialog } from "@/components/onboarding/incomplete-setup-dialog";
 import { SingleSelect } from "@/components/ui/single-select";
-import { MapPin } from "lucide-react";
 import { REGIONS } from "@/lib/constants";
 import { useOnboardingStore } from "@/store/use-onboarding-store";
 import type { OnboardingData } from "@/store/use-onboarding-store";
 
 const REGION_OPTIONS = REGIONS.map((r) => ({ label: r, value: r }));
 
-export default function WorkspaceStepOne() {
+export function FacilitySetupStep({ onNext }: { onNext: () => void }) {
   const router = useRouter();
-
   const formData = useOnboardingStore((state) => state.data);
   const updateData = useOnboardingStore((state) => state.updateData);
 
-  const [showDialog, setShowDialog] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     updateData({ [name]: value } as Partial<OnboardingData>);
   };
 
-  const proceedToNextStep = () => {
-    router.push("/onboarding/departments-step2"); // Adjust path to your actual Step 2
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // If the document is missing, pause and show the warning modal
-    if (!formData.document) {
-      setShowDialog(true);
-      return; // Stop execution here
+    // Logo is the only required artifact on this step — HeFRA license and
+    // document are optional (they speed up verification but the grace-
+    // period flow, see BACKEND_SPEC-adjacent copy on /request-access,
+    // exists precisely to let a facility onboard before HeFRA is in hand).
+    if (!formData.logoUrl) {
+      setLogoError(true);
+      return;
     }
-
-    // If everything is perfectly complete, proceed directly
-    proceedToNextStep();
+    onNext();
   };
 
   const handlePickLocation = () => {
@@ -55,7 +48,7 @@ export default function WorkspaceStepOne() {
 
   return (
     <>
-      <StepProgress current={1} />
+      <StepProgress current={1} total={3} onBack={() => router.back()} />
 
       <StepHeader
         title="Let's set up your hospital"
@@ -63,13 +56,23 @@ export default function WorkspaceStepOne() {
       />
 
       <form onSubmit={handleSubmit} className="mt-10 flex-1 space-y-6">
-        <ImageUpload
-          value={formData.logoUrl ?? null}
-          onChange={(url) => updateData({ logoUrl: url ?? undefined })}
-          shape="square"
-          size={80}
-          label="Facility logo (optional)"
-        />
+        <div>
+          <ImageUpload
+            value={formData.logoUrl ?? null}
+            onChange={(url) => {
+              updateData({ logoUrl: url ?? undefined });
+              if (url) setLogoError(false);
+            }}
+            shape="square"
+            size={80}
+            label="Facility logo"
+          />
+          {logoError && (
+            <p className="mt-2 text-caption text-destructive">
+              Facility logo is required.
+            </p>
+          )}
+        </div>
 
         <FormField label="Hospital Name" htmlFor="hospitalName">
           <Input
@@ -78,6 +81,7 @@ export default function WorkspaceStepOne() {
             value={formData.hospitalName}
             onChange={handleChange}
             placeholder="e.g. Saint Mary's Medical Center"
+            required
           />
         </FormField>
 
@@ -115,7 +119,7 @@ export default function WorkspaceStepOne() {
           </FormField>
         </div>
 
-        <FormField label="HeFRA License Number" htmlFor="hefraLicense">
+        <FormField label="HeFRA License Number (optional)" htmlFor="hefraLicense">
           <Input
             id="hefraLicense"
             name="hefraLicense"
@@ -123,15 +127,18 @@ export default function WorkspaceStepOne() {
             onChange={handleChange}
             placeholder="HFR-XXXX-XXXX"
           />
+          <p className="text-caption text-fg-muted">
+            Optional — speeds up verification.
+          </p>
         </FormField>
 
-        <FormField label="Verification Document" htmlFor="document">
+        <FormField label="Verification Document (optional)" htmlFor="document">
           <FileUpload
             id="document"
             value={formData.document}
             onChange={(file) => updateData({ document: file })}
             accept=".pdf,image/*"
-            hint="Upload PDF or Image. Max 5MB"
+            hint="Optional — speeds up verification. PDF or Image, max 5MB"
           />
         </FormField>
 
@@ -141,14 +148,6 @@ export default function WorkspaceStepOne() {
           </Button>
         </div>
       </form>
-      <IncompleteSetupDialog
-        open={showDialog}
-        onOpenChange={setShowDialog}
-        onConfirm={() => {
-          setShowDialog(false); // Close the modal
-          proceedToNextStep(); // Move to Step 2 without the document
-        }}
-      />
     </>
   );
 }

@@ -9,6 +9,7 @@ import {
   useSignOutSession,
   useSessions,
 } from "@/hooks/use-settings";
+import { clearSession } from "@/lib/mock/auth";
 
 function deviceIcon(device: string) {
   const d = device.toLowerCase();
@@ -37,10 +38,8 @@ export function SessionsCard() {
           onClick={() =>
             signOutAll.mutate(undefined, {
               onSuccess: () => {
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("pulse_token");
-                  window.location.href = "/onboarding/admin";
-                }
+                clearSession();
+                window.location.href = "/login";
               },
             })
           }

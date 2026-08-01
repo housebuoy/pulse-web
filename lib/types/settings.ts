@@ -16,7 +16,8 @@ import type { StaffRole } from "@/lib/types/staff";
 
 export type FacilityType = "hospital" | "clinic" | "health_center" | "diagnostic_center";
 
-export interface FacilityProfile extends Omit<OnboardingData, "document"> {
+export interface FacilityProfile
+  extends Omit<OnboardingData, "document" | "adminEmail"> {
   facilityType: FacilityType;
 }
 

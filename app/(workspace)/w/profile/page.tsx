@@ -19,6 +19,7 @@ import { PreferencesCard } from "@/components/dashboard/settings/preferences-car
 import { DangerZoneCard } from "@/components/dashboard/settings/danger-zone-card";
 import { useStaffMember, useUpdateStaff } from "@/hooks/use-staff";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
+import { clearSession } from "@/lib/mock/auth";
 import type { DutyStatus } from "@/lib/types/staff";
 
 interface ProfileFormValues {
@@ -193,7 +194,10 @@ export default function WorkspaceProfilePage() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => router.push("/onboarding/admin")}
+              onClick={() => {
+                clearSession();
+                router.push("/login");
+              }}
             >
               <LogOut className="size-4" />
               Sign out
