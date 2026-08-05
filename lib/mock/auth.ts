@@ -18,11 +18,12 @@ const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 /** Backend POST /api/auth/login response shape (LoginResponse). */
 interface LoginResponse {
-  token: string;
+  token: string | null;
   role: string;
   userId: number;
   message: string;
   session: WorkspaceSession;
+  devOtp?: string | null;
 }
 
 /** One activated doctor account so /w can be built and previewed immediately. */
@@ -71,10 +72,11 @@ export interface LoginResult {
 
 export function login({ email, password }: LoginCredentials): Promise<LoginResult> {
   if (!USE_MOCK) {
-    // Real backend: POST /api/auth/login → { token, role, userId, message, session }
+    // Real backend (2FA): POST /api/auth/login validates credentials and
+    // issues a verification code; token comes from verifyLoginOtp.
     return api
       .post<LoginResponse>("/auth/login", { email, password })
-      .then(({ data }) => ({ session: data.session, token: data.token }));
+      .then(({ data }) => ({ session: data.session, token: data.token ?? null }));
   }
   const session = ACCOUNTS.find(
     (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
@@ -85,15 +87,30 @@ export function login({ email, password }: LoginCredentials): Promise<LoginResul
   return delay({ session, token: `mock-session.${session.staffId}` });
 }
 
-// Second factor, only wired for new/unrecognized devices (see
-// isDeviceTrusted below) — mock: any 6-digit code passes, same convention
+/** Result of a successful OTP verification — the real session token. */
+export interface OtpVerifyResult {
+  token: string;
+}
+
+// Second factor, wired for every login on an untrusted device (see
+// isDeviceTrusted below). Mock: any 6-digit code passes, same convention
 // as app/(auth)/activate/page.tsx.
-// Real: the backend has no 2FA challenge endpoint yet (BACKEND_SPEC §10.7);
-// this resolves immediately so the trusted-device branch is a no-op.
-export function verifyLoginOtp(code: string): Promise<void> {
-  if (!USE_MOCK) return Promise.resolve();
-  if (code.length !== 6) return Promise.reject(new Error("Enter all 6 digits."));
-  return delay(undefined, 200);
+// Real: POST /api/auth/login/verify-otp validates the code server-side and
+// returns the real JWT; the mock returns null so callers fall back to the
+// mock login token.
+export async function verifyLoginOtp(
+  code: string,
+  email?: string,
+): Promise<OtpVerifyResult | null> {
+  if (!USE_MOCK) {
+    const { data } = await api.post<LoginResponse>("/auth/login/verify-otp", {
+      email,
+      code,
+    });
+    return { token: data.token };
+  }
+  if (code.length !== 6) throw new Error("Enter all 6 digits.");
+  return delay(null, 200);
 }
 
 /**
