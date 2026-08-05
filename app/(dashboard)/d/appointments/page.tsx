@@ -43,16 +43,18 @@ function AppointmentsBody() {
   const { data: departments = [] } = useAppointmentDepartments();
   const update = useUpdateAppointment();
 
-  // Week / month views: range fetch. Both hooks always run; only one is used.
+  // Week / month views: range fetch — each only fires in its own view (day
+  // view no longer pays for two unused range queries).
   const weekRange = useMemo(() => getWeekRange(date), [date]);
   const monthRange = useMemo(() => getMonthRange(date), [date]);
 
   const { data: weekAppts = [], isLoading: weekLoading } = useAppointmentsRange(
     weekRange.from,
     weekRange.to,
+    view === "week",
   );
   const { data: monthAppts = [], isLoading: monthLoading } =
-    useAppointmentsRange(monthRange.from, monthRange.to);
+    useAppointmentsRange(monthRange.from, monthRange.to, view === "month");
 
   // Shared department + status filters — applied identically across List,
   // Week, and Month so switching views never changes what's "in scope".
