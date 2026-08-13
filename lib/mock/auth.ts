@@ -5,11 +5,25 @@
 // (hooks/use-workspace-session.ts, components/auth/require-role.tsx,
 // app/(auth)/login/page.tsx) unchanged.
 
+import { api } from "@/lib/axios";
 import type {
   LoginCredentials,
   SessionRole,
   WorkspaceSession,
 } from "@/lib/types/auth";
+
+// The swap flag shared by every other domain's lib/api/*.ts — mock is the
+// default; set NEXT_PUBLIC_USE_MOCK=false to hit the Spring Boot backend.
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+
+/** Backend POST /api/auth/login response shape (LoginResponse). */
+interface LoginResponse {
+  token: string;
+  role: string;
+  userId: number;
+  message: string;
+  session: WorkspaceSession;
+}
 
 /** One activated doctor account so /w can be built and previewed immediately. */
 export const MOCK_DOCTOR_SESSION: WorkspaceSession = {
@@ -56,6 +70,12 @@ export interface LoginResult {
 }
 
 export function login({ email, password }: LoginCredentials): Promise<LoginResult> {
+  if (!USE_MOCK) {
+    // Real backend: POST /api/auth/login → { token, role, userId, message, session }
+    return api
+      .post<LoginResponse>("/auth/login", { email, password })
+      .then(({ data }) => ({ session: data.session, token: data.token }));
+  }
   const session = ACCOUNTS.find(
     (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
   );
@@ -68,9 +88,27 @@ export function login({ email, password }: LoginCredentials): Promise<LoginResul
 // Second factor, only wired for new/unrecognized devices (see
 // isDeviceTrusted below) — mock: any 6-digit code passes, same convention
 // as app/(auth)/activate/page.tsx.
+// Real: the backend has no 2FA challenge endpoint yet (BACKEND_SPEC §10.7);
+// this resolves immediately so the trusted-device branch is a no-op.
 export function verifyLoginOtp(code: string): Promise<void> {
+  if (!USE_MOCK) return Promise.resolve();
   if (code.length !== 6) return Promise.reject(new Error("Enter all 6 digits."));
   return delay(undefined, 200);
+}
+
+/**
+ * Resolves the full session for a stored token. Mock tokens decode locally;
+ * real JWTs are opaque to the frontend, so the session is fetched from
+ * GET /api/auth/me (token attached by the axios interceptor).
+ */
+export async function fetchSession(token: string): Promise<WorkspaceSession> {
+  if (USE_MOCK) {
+    const session = resolveSession(token);
+    if (!session) throw new Error("No session for token");
+    return session;
+  }
+  const { data } = await api.get<WorkspaceSession>("/auth/me");
+  return data;
 }
 
 // ---- Session storage ----

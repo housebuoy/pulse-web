@@ -17,13 +17,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Optional: bounce to login on an expired/invalid token.
+// Bounce to login on an expired/invalid token.
 api.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      // useAuthStore.getState().clear();
-      // window.location.href = "/login";
+      window.localStorage.removeItem("pulse_token");
+      window.localStorage.removeItem("pulse_trusted_device");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },
