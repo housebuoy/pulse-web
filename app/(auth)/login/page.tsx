@@ -19,7 +19,6 @@ import { useAuthState } from "@/hooks/use-workspace-session";
 import {
   DEMO_PASSWORD,
   finalizeLogin,
-  isDeviceTrusted,
   login,
   markDeviceTrusted,
   roleHome,
@@ -55,15 +54,14 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const result = await login({ email, password });
-      if (isDeviceTrusted()) {
-        finalizeLogin(result.token);
-        router.replace(roleHome(result.session.role));
-      } else {
-        setPending(result);
-        setStep("otp");
-      }
-    } catch {
-      setError("Invalid email or password.");
+      // 2FA: every login completes with a verification code (the backend has
+      // no device-trust concept yet — the real flow always steps through OTP,
+      // per the mock's own DECISION note that every-login OTP is the safer
+      // default for a real facility).
+      setPending(result);
+      setStep("otp");
+    } catch (err) {
+      setError(backendMessage(err) ?? "Invalid email or password.");
     } finally {
       setSubmitting(false);
     }
@@ -73,15 +71,26 @@ export default function LoginPage() {
     e.preventDefault();
     if (code.length !== 6 || !pending) return;
     setSubmitting(true);
+    setError("");
     try {
-      await verifyLoginOtp(code);
+      const otp = await verifyLoginOtp(code, email);
       markDeviceTrusted();
-      finalizeLogin(pending.token);
+      finalizeLogin(otp?.token ?? pending.token);
       router.replace(roleHome(pending.session.role));
+    } catch (err) {
+      setError(backendMessage(err) ?? "Verification failed. Try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Surface the backend's ApiResponse message (e.g. "Invalid verification
+  // code. 4 attempts remaining.") instead of the generic axios error text.
+  const backendMessage = (err: unknown): string | null =>
+    typeof err === "object" && err !== null && "response" in err
+      ? ((err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message ?? null)
+      : null;
 
   // Already signed in and about to be redirected — don't flash the form.
   if (session) return null;
