@@ -36,7 +36,7 @@ export function ClinicalRecordDialog({
   onOpenChange: (open: boolean) => void;
   allergies: string[];
   medications: Medication[];
-  onSubmit: (values: { allergies: string[]; medications: Medication[] }) => void;
+  onSubmit: (values: { allergies: string[]; currentMedications: Medication[] }) => void;
   isSubmitting: boolean;
 }) {
   const { register, control, handleSubmit, reset } =
