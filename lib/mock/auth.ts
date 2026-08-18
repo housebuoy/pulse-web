@@ -67,7 +67,9 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 
 export interface LoginResult {
   session: WorkspaceSession;
-  token: string;
+  // null on the first login step — the real 2FA flow issues the token
+  // from verifyLoginOtp after the OTP is confirmed (lib/api/auth.ts).
+  token: string | null;
 }
 
 export function login({ email, password }: LoginCredentials): Promise<LoginResult> {
@@ -89,7 +91,9 @@ export function login({ email, password }: LoginCredentials): Promise<LoginResul
 
 /** Result of a successful OTP verification — the real session token. */
 export interface OtpVerifyResult {
-  token: string;
+  // null when the backend response carries no token yet (callers fall back
+  // to the pending login token).
+  token: string | null;
 }
 
 // Second factor, wired for every login on an untrusted device (see
@@ -151,8 +155,8 @@ export function getStoredSession(): WorkspaceSession | null {
 }
 
 /** Persists the token from a completed login (password, or password+OTP). */
-export function finalizeLogin(token: string): void {
-  if (typeof window !== "undefined") {
+export function finalizeLogin(token: string | null): void {
+  if (typeof window !== "undefined" && token) {
     window.localStorage.setItem(TOKEN_KEY, token);
   }
 }
