@@ -14,6 +14,15 @@ export function Providers({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
+            // Fail fast on 4xx — retrying a 404 just saturates the browser's
+            // connection pool and queues the real queries behind the storm.
+            // Only network failures and 5xx get a couple of retries.
+            retry: (failureCount, error) => {
+              const status = (error as { response?: { status?: number } })
+                ?.response?.status;
+              if (status !== undefined && status < 500) return false;
+              return failureCount < 2;
+            },
           },
         },
       }),

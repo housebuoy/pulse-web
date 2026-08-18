@@ -11,12 +11,13 @@ const keys = {
   list: () => [...keys.all, "list"] as const,
 };
 
-export function useStaff() {
+export function useStaff(enabled = true) {
   return useQuery({
     queryKey: keys.list(),
     queryFn: () => staffApi.fetchStaff(),
     staleTime: 60_000,
     placeholderData: (prev) => prev,
+    enabled,
   });
 }
 

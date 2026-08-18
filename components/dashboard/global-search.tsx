@@ -69,10 +69,13 @@ export function GlobalSearch() {
   const { data: appointments = [] } = useAppointmentsRange(
     addDays(today, -30),
     addDays(today, 30),
+    // Only load the search index when the box is actually open — the
+    // previous unconditional preload fired 4 datasets on every page visit.
+    open,
   );
-  const { data: patients = [] } = usePatients();
-  const { data: staff = [] } = useStaff();
-  const { data: departments = [] } = useDepartments();
+  const { data: patients = [] } = usePatients(open);
+  const { data: staff = [] } = useStaff(open);
+  const { data: departments = [] } = useDepartments(open);
 
   const query = value.trim();
   const hasQuery = query.length > 0;

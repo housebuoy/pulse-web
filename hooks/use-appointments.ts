@@ -45,11 +45,12 @@ export function useAppointmentDepartments() {
   });
 }
 
-export function useAppointmentsRange(from: string, to: string) {
+export function useAppointmentsRange(from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: [...keys.all, "range", from, to] as const,
     queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to),
     placeholderData: (prev) => prev,
+    enabled,
   });
 }
 
