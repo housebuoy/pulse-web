@@ -11,6 +11,7 @@ import type {
   AppointmentFilters,
   AppointmentStats,
   UpdateAppointmentInput,
+  UpdatePaymentInput,
 } from "@/lib/types/appointments";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
@@ -64,5 +65,16 @@ export async function updateAppointment(
   const { data } = await api.patch<Appointment>(`/appointments/${input.id}`, {
     status: input.status,
   });
+  return data;
+}
+
+export async function updatePayment(
+  input: UpdatePaymentInput
+): Promise<Appointment> {
+  if (USE_MOCK) return mock.applyPaymentUpdate(input);
+  const { data } = await api.patch<Appointment>(
+    `/appointments/${input.id}/payment`,
+    { paymentStatus: input.paymentStatus },
+  );
   return data;
 }

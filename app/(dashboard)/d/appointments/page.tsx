@@ -7,6 +7,7 @@ import { AppointmentDateNav } from "@/components/dashboard/appointments/appointm
 import { AppointmentFilters } from "@/components/dashboard/appointments/appointment-filters";
 import { AppointmentSummary } from "@/components/dashboard/appointments/appointment-summary";
 import { AppointmentList } from "@/components/dashboard/appointments/appointment-list";
+import { UpcomingList } from "@/components/dashboard/appointments/upcoming-list";
 import { WeekView } from "@/components/dashboard/appointments/week-view";
 import { MonthView } from "@/components/dashboard/appointments/month-view";
 import {
@@ -19,6 +20,7 @@ import {
   useAppointmentStats,
   useAppointmentsRange,
   useUpdateAppointment,
+  useUpdatePayment,
 } from "@/hooks/use-appointments";
 import { countByDepartment, toDateKey } from "@/lib/appointment-utils";
 import { getWeekRange, getMonthRange } from "@/lib/calendar-utils";
@@ -41,7 +43,6 @@ function AppointmentsBody() {
   });
   const { data: stats } = useAppointmentStats(date);
   const { data: departments = [] } = useAppointmentDepartments();
-  const update = useUpdateAppointment();
 
   // Week / month views: range fetch — each only fires in its own view (day
   // view no longer pays for two unused range queries).
@@ -55,6 +56,22 @@ function AppointmentsBody() {
   );
   const { data: monthAppts = [], isLoading: monthLoading } =
     useAppointmentsRange(monthRange.from, monthRange.to, view === "month");
+
+  // Upcoming (default): all future bookings for a rolling year — no date pick.
+  const upcomingFrom = toDateKey(new Date());
+  const upcomingTo = useMemo(
+    () =>
+      new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10),
+    [],
+  );
+  const { data: upcomingAppts = [], isLoading: upcomingLoading } =
+    useAppointmentsRange(upcomingFrom, upcomingTo, view === "upcoming");
+
+  const update = useUpdateAppointment();
+  const updatePayment = useUpdatePayment();
+  const isMutating = update.isPending || updatePayment.isPending;
+  const handleMarkPaid = (id: string) =>
+    updatePayment.mutate({ id, paymentStatus: "paid" });
 
   // Shared department + status filters — applied identically across List,
   // Week, and Month so switching views never changes what's "in scope".
@@ -78,6 +95,16 @@ function AppointmentsBody() {
     [monthAppts, matchesFilter],
   );
 
+  const visibleUpcoming = useMemo(
+    () =>
+      upcomingAppts
+        .filter(matchesFilter)
+        .filter((a) =>
+          ["scheduled", "confirmed", "checked_in"].includes(a.status),
+        ),
+    [upcomingAppts, matchesFilter],
+  );
+
   const handleAction = (id: string, next: AppointmentStatus) =>
     update.mutate({ id, status: next });
 
@@ -85,8 +112,17 @@ function AppointmentsBody() {
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="space-y-6 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <AppointmentDateNav date={date} onChange={setDate} view={view} />
-          <ViewSwitcher view={view} onChange={setView} />
+          {view !== "upcoming" && (
+            <AppointmentDateNav date={date} onChange={setDate} view={view} />
+          )}
+          <div className="ml-auto flex items-center gap-3">
+            {view === "upcoming" && (
+              <p className="text-sm text-fg-muted">
+                All future bookings · next 12 months
+              </p>
+            )}
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
         </div>
 
         <AppointmentFilters
@@ -100,12 +136,23 @@ function AppointmentsBody() {
         />
         <AppointmentSummary stats={stats} isLoading={dayLoading} />
 
+        {view === "upcoming" && (
+          <UpcomingList
+            appointments={visibleUpcoming}
+            isLoading={upcomingLoading}
+            isMutating={isMutating}
+            onAction={handleAction}
+            onMarkPaid={handleMarkPaid}
+          />
+        )}
+
         {view === "list" && (
           <AppointmentList
             appointments={visibleDay}
             isLoading={dayLoading}
-            isMutating={update.isPending}
+            isMutating={isMutating}
             onAction={handleAction}
+            onMarkPaid={handleMarkPaid}
           />
         )}
 

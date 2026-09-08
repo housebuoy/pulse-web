@@ -38,11 +38,13 @@ export function AppointmentList({
   isLoading,
   isMutating,
   onAction,
+  onMarkPaid,
 }: {
   appointments: Appointment[];
   isLoading: boolean;
   isMutating: boolean;
   onAction: (id: string, next: AppointmentStatus) => void;
+  onMarkPaid?: (id: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
@@ -73,6 +75,7 @@ export function AppointmentList({
               key={appointment.id}
               appointment={appointment}
               onAction={onAction}
+              onMarkPaid={onMarkPaid}
               isMutating={isMutating}
             />
           ))}

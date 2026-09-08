@@ -1379,6 +1379,66 @@ land — at which point flipping `USE_MOCK` is the only change needed.
 
 ---
 
+### 6.13 Auth — password reset (facility staff, email-based)
+
+Like `/login` (§8.1), these live directly in `lib/mock/auth.ts` behind the
+same `USE_MOCK` swap rather than in a `lib/api/auth.ts` — the file this
+doc has flagged as missing since §1 still doesn't exist. Consuming pages:
+`app/(auth)/forgot-password/page.tsx` (steps 1–2) and
+`app/(auth)/new-password/page.tsx` (step 3).
+
+| Method | Path | Body | Response | Mock fallback |
+|---|---|---|---|---|
+| POST | `/auth/password-reset/request` | `{ email }` | `202 Accepted`, empty body | `requestPasswordReset(email)` — resolves after a delay |
+| POST | `/auth/password-reset/verify` | `{ email, code }` | `{ resetToken: string }` | `verifyResetCode(email, code)` — any 6-digit code passes, returns `mock-reset.<ts>` |
+| POST | `/auth/password-reset/confirm` | `{ resetToken, newPassword }` | `204 No Content` | `resetPassword(token, newPassword)` — resolves |
+
+**These are three distinct password paths — do not collapse them:**
+
+1. **This one** — facility staff (`admin` \| `doctor`), unauthenticated,
+   keyed on the user's **work email**, second factor by emailed code.
+2. **Patient reset (mobile app)** — keyed on a **phone number** with an
+   SMS code. Different identity, different channel, different subject
+   table; it must not share these endpoints or this token type.
+3. **`POST /settings/profile/change-password`** (§6.7) — *authenticated*,
+   requires the current password, no token involved. Reset exists
+   precisely because the user cannot satisfy that one.
+
+Required backend behaviour, none of which the mock models:
+
+- **Step 1 must not disclose account existence.** Always `202`, same
+  latency, whether or not the address belongs to a staff account. The UI
+  advances to the code step either way and says "if that email belongs to
+  a Pulse account" — a backend that 404s on unknown addresses turns this
+  screen into a work-email enumeration oracle for the facility.
+- **Rate-limit step 1 per email and per IP**, and cap verify attempts per
+  code the way the login OTP already does (`lib/mock/auth.ts` notes the
+  backend's "N attempts remaining" message shape, surfaced by both
+  screens' `backendMessage` helper).
+- **Codes and reset tokens are short-lived and single-use.** The frontend
+  spends the token once and clears it; the backend must invalidate it on
+  use and on expiry regardless.
+- **`confirm` must invalidate every existing session for that account**
+  (the `ActiveSession` list in §5.8 is the user-visible side of this) —
+  password reset is the standard "I may be compromised" lever.
+- **Reset issues no session token.** Deliberate on the frontend: the user
+  is sent back to `/login` and authenticates normally, so `roleHome()`
+  stays the single place the `/d` vs `/w` redirect is decided. The
+  backend should not return a JWT from `confirm`.
+- **Staff-scoped and tenant-scoped.** The email identifies a staff account
+  within a facility; a `suspended` tenant (§4.6) should reject reset the
+  same way it rejects login.
+
+Frontend-side notes: the verified reset token is held in **`sessionStorage`**
+(`pulse_reset_token` / `pulse_reset_email`), not `localStorage` where the
+session token lives — it's a short-lived credential for one in-progress
+reset and shouldn't outlive the tab. Password rules shown on
+`/new-password` (`components/auth/password-strength.tsx`) are the app's
+existing stated policy — 8+ chars, a number, a symbol — and are a UX hint
+only; real strength/reuse/breach checks are the backend's.
+
+---
+
 ## 7. Business rules
 
 ### 7.1 Appointment lifecycle

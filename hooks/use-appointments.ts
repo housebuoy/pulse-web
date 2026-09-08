@@ -7,6 +7,7 @@ import * as appointmentsApi from "@/lib/api/appointments";
 import type {
   AppointmentFilters,
   UpdateAppointmentInput,
+  UpdatePaymentInput,
 } from "@/lib/types/appointments";
 
 const keys = {
@@ -21,8 +22,8 @@ export function useAppointments(filters: AppointmentFilters) {
   return useQuery({
     queryKey: keys.list(filters),
     queryFn: () => appointmentsApi.fetchAppointments(filters),
-    // Light polling — the schedule isn't a live ticker like the queue.
-    refetchInterval: 30_000,
+    // Fast refresh — external payment/status changes surface within ~5s.
+    refetchInterval: 5_000,
     // Keep the old day's rows on screen while a new day loads (v5 keepPreviousData).
     placeholderData: (prev) => prev,
   });
@@ -32,7 +33,7 @@ export function useAppointmentStats(date: string) {
   return useQuery({
     queryKey: keys.stats(date),
     queryFn: () => appointmentsApi.fetchAppointmentStats(date),
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
     placeholderData: (prev) => prev,
   });
 }
@@ -62,6 +63,10 @@ export function useAppointmentsRange(
   return useQuery({
     queryKey: [...keys.all, "range", from, to, staffId ?? null] as const,
     queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to, staffId),
+    // Fast refresh: external events (patient pays via Aza, walk-in check-in)
+    // must surface within ~5s — psam hand-tests with the page open and found
+    // 30s too slow.
+    refetchInterval: 5_000,
     placeholderData: (prev) => prev,
     enabled,
   });
@@ -74,6 +79,17 @@ export function useUpdateAppointment() {
       appointmentsApi.updateAppointment(input),
     onSuccess: () => {
       // One status change touches both the list and the stat counts.
+      queryClient.invalidateQueries({ queryKey: keys.all });
+    },
+  });
+}
+
+export function useUpdatePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdatePaymentInput) =>
+      appointmentsApi.updatePayment(input),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.all });
     },
   });

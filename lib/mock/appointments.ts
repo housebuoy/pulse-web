@@ -4,6 +4,7 @@ import type {
   AppointmentFilters,
   AppointmentStats,
   UpdateAppointmentInput,
+  UpdatePaymentInput,
 } from "@/lib/types/appointments";
 
 const DEPARTMENTS: AppointmentDepartment[] = [
@@ -360,6 +361,18 @@ export function applyUpdate({
     return Promise.reject(new Error(`Appointment ${id} not found`));
   }
   found.status = status;
+  return delay({ ...found });
+}
+
+export function applyPaymentUpdate({
+  id,
+  paymentStatus,
+}: UpdatePaymentInput): Promise<Appointment> {
+  const found = store.find((a) => a.id === id);
+  if (!found) {
+    return Promise.reject(new Error(`Appointment ${id} not found`));
+  }
+  found.paymentStatus = paymentStatus;
   return delay({ ...found });
 }
 
