@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Mail, Pencil, Phone } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Button } from "@/components/ui/button";
 import { StaffStatusBadge } from "@/components/dashboard/staff/staff-status-badge";
 import { DutyControl } from "@/components/dashboard/staff/duty-control";
@@ -45,7 +46,7 @@ export default function StaffMemberPage() {
 
           <div className="rounded-xl border border-border bg-surface p-6">
             {isLoading && !member ? (
-              <p className="text-sm text-fg-muted">Loading…</p>
+              <DetailSkeleton lines={5} />
             ) : !member ? (
               <p className="text-sm text-fg-muted">Staff member not found.</p>
             ) : (

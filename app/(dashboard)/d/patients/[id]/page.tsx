@@ -14,6 +14,7 @@ import {
   Plus,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit-badge";
@@ -52,7 +53,7 @@ export default function PatientFilePage() {
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {isLoading && !patient ? (
-            <p className="text-sm text-fg-muted">Loading…</p>
+            <DetailSkeleton lines={5} />
           ) : !patient ? (
             <p className="text-sm text-fg-muted">Patient not found.</p>
           ) : (
