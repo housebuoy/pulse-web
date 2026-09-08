@@ -9,6 +9,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -54,10 +55,27 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const result = await login({ email, password });
-      // 2FA: every login completes with a verification code (the backend has
-      // no device-trust concept yet — the real flow always steps through OTP,
-      // per the mock's own DECISION note that every-login OTP is the safer
-      // default for a real facility).
+      // Dev-mode convenience: the backend echoes the verification code
+      // (otp.dev-mode=true) — surface it here so manual QA doesn't need
+      // DevTools/Render logs. Absent when the backend stops echoing.
+      if (result.devOtp) {
+        toast("Dev OTP", {
+          description: (
+            <span className="font-mono text-xl font-semibold tracking-[0.3em]">
+              {result.devOtp}
+            </span>
+          ),
+          duration: 15_000,
+        });
+      }
+      // 2FA (per-account /settings/2fa): if the backend returned a token
+      // directly the account does NOT require OTP — go straight in.
+      if (result.token) {
+        finalizeLogin(result.token);
+        router.replace(roleHome(result.session.role));
+        return;
+      }
+      // Otherwise this account requires the verification code.
       setPending(result);
       setStep("otp");
     } catch (err) {

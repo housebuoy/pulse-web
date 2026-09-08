@@ -51,6 +51,9 @@ export interface AppointmentFilters {
   date: string; // YYYY-MM-DD (local)
   departmentId?: string | "all";
   status?: AppointmentStatus | "all";
+  /** Workspace scope — server filters to one clinician via the stable
+   *  staff↔doctor email link. Omit for facility-wide (admin) views. */
+  staffId?: string;
 }
 
 export interface UpdateAppointmentInput {

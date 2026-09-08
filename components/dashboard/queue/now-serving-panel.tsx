@@ -13,6 +13,7 @@ export function NowServingPanel({
   onNoShow,
   isCalling,
   isUpdating,
+  isLoading = false,
 }: {
   serving: QueueEntry[];
   canCallNext: boolean;
@@ -21,6 +22,8 @@ export function NowServingPanel({
   onNoShow: (entry: QueueEntry) => void;
   isCalling: boolean;
   isUpdating: boolean;
+  /** Show shimmer while data may still be refetching (remount from cache). */
+  isLoading?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface p-5">
@@ -35,9 +38,24 @@ export function NowServingPanel({
       </div>
 
       {serving.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-fg-muted">
-          No one in consultation. Call the next patient to begin.
-        </div>
+        isLoading ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" aria-hidden>
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4"
+              >
+                <div className="h-5 w-14 shimmer rounded bg-surface-muted" />
+                <div className="h-4 w-40 shimmer rounded bg-surface-muted" />
+                <div className="mt-2 h-8 w-32 shimmer rounded bg-surface-muted" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-fg-muted">
+            No one in consultation. Call the next patient to begin.
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {serving.map((entry) => (

@@ -34,10 +34,6 @@ export function StatTile({
 }: StatTileProps) {
   const DeltaIcon = delta?.direction === "up" ? ArrowUp : ArrowDown;
 
-  // Concatenate unit into the same text node so there is exactly ONE rendered
-  // glyph sequence — no adjacent-span spacing, no font-metric gap.
-  const display = isLoading ? "—" : unit ? `${value}${unit}` : String(value);
-
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-1">
@@ -59,18 +55,25 @@ export function StatTile({
        * before the property resolves. Writing the CSS value directly avoids
        * the custom-property composition entirely.
        */}
-      <span
-        className={cn(
-          "text-[17px] font-bold leading-none [font-variant-numeric:tabular-nums]",
-          valueTone === "warning"
-            ? "text-warning"
-            : valueTone === "danger"
-              ? "text-danger"
-              : "text-fg",
-        )}
-      >
-        {display}
-      </span>
+      {isLoading ? (
+        <span
+          aria-hidden
+          className="block h-[17px] w-14 shimmer rounded bg-surface-muted"
+        />
+      ) : (
+        <span
+          className={cn(
+            "text-[17px] font-bold leading-none [font-variant-numeric:tabular-nums]",
+            valueTone === "warning"
+              ? "text-warning"
+              : valueTone === "danger"
+                ? "text-danger"
+                : "text-fg",
+          )}
+        >
+          {unit ? `${value}${unit}` : String(value)}
+        </span>
+      )}
 
       {delta && !isLoading && (
         <span
@@ -90,8 +93,8 @@ export function StatTile({
 export function StatTileSkeleton() {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="h-2.5 w-14 animate-pulse rounded bg-surface-muted" />
-      <div className="h-[17px] w-10 animate-pulse rounded bg-surface-muted" />
+      <div className="h-2.5 w-14 shimmer rounded bg-surface-muted" />
+      <div className="h-[17px] w-10 shimmer rounded bg-surface-muted" />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function NeedsAttentionCard() {
         ? Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="h-14 animate-pulse rounded-lg bg-surface-muted"
+              className="h-14 shimmer rounded-lg bg-surface-muted"
             />
           ))
         : alerts.map((alert) => {

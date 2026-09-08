@@ -76,7 +76,7 @@ export function FacilitySection() {
   };
 
   if (isLoading || !facility) {
-    return <div className="h-96 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-96 shimmer rounded-xl bg-surface-muted" />;
   }
 
   return (

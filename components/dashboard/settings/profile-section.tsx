@@ -71,7 +71,7 @@ export function ProfileSection() {
   };
 
   if (isLoading || !profile) {
-    return <div className="h-80 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-80 shimmer rounded-xl bg-surface-muted" />;
   }
 
   return (
