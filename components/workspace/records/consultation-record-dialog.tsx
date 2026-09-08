@@ -9,7 +9,7 @@
 // contributes clinical judgement. See lib/types/records.ts.
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/onboarding/form-field";
+import {
+  EMPTY_PRESCRIPTION,
+  PrescriptionFields,
+} from "@/components/workspace/records/prescription-fields";
+import type { PrescriptionDraft } from "@/lib/types/records";
 
 export interface ConsultationFormValues {
   presentingComplaint: string;
@@ -28,6 +33,8 @@ export interface ConsultationFormValues {
   diagnosis: string;
   plan: string;
   summary: string;
+  /** Written during this visit, attached to the record on save. */
+  prescriptions: PrescriptionDraft[];
 }
 
 const EMPTY: ConsultationFormValues = {
@@ -36,6 +43,7 @@ const EMPTY: ConsultationFormValues = {
   diagnosis: "",
   plan: "",
   summary: "",
+  prescriptions: [],
 };
 
 export function ConsultationRecordDialog({
@@ -58,10 +66,16 @@ export function ConsultationRecordDialog({
 }) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm<ConsultationFormValues>({ defaultValues: EMPTY });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "prescriptions",
+  });
 
   useEffect(() => {
     if (open) reset(EMPTY);
@@ -75,6 +89,17 @@ export function ConsultationRecordDialog({
       diagnosis: values.diagnosis.trim(),
       plan: values.plan.trim(),
       summary: values.summary.trim(),
+      // A row the doctor added but left blank is dropped rather than saved as
+      // an empty prescription. Everything else goes through verbatim.
+      prescriptions: values.prescriptions
+        .filter((p) => p.medication.trim())
+        .map((p) => ({
+          medication: p.medication.trim(),
+          dose: p.dose.trim(),
+          frequency: p.frequency.trim(),
+          duration: p.duration.trim(),
+          instructions: p.instructions?.trim() || undefined,
+        })),
     });
 
   return (
@@ -120,6 +145,13 @@ export function ConsultationRecordDialog({
           <FormField label="Visit summary" htmlFor="summary">
             <Textarea id="summary" rows={3} {...register("summary")} />
           </FormField>
+
+          <PrescriptionFields
+            fields={fields}
+            register={register}
+            onAppend={() => append(EMPTY_PRESCRIPTION)}
+            onRemove={remove}
+          />
 
           {error && <p className="text-caption text-destructive">{error}</p>}
 

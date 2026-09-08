@@ -125,3 +125,22 @@ export interface CreateVisitRecordInput {
   plan: string;
   summary: string;
 }
+
+/** One prescription as typed in the consultation form. Plain strings, all of
+ *  them — the app has no drug catalog, no interaction checking and no dose
+ *  norms to check against, by design. */
+export interface PrescriptionDraft {
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+/** Prescriptions authored during a consultation, attached to the visit record
+ *  it was written in. A visit may carry any number of these, including none. */
+export interface CreatePrescriptionsInput {
+  patientId: string;
+  visitRecordId: string;
+  prescriptions: PrescriptionDraft[];
+}

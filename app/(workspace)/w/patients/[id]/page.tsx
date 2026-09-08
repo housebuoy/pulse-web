@@ -24,7 +24,11 @@ import {
   useUpdateClinicalRecord,
   useUpdatePatient,
 } from "@/hooks/use-patients";
-import { useCanAuthorRecords, useCreateVisitRecord } from "@/hooks/use-records";
+import {
+  PrescriptionsFailedError,
+  useCanAuthorRecords,
+  useSaveConsultation,
+} from "@/hooks/use-records";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import {
   GENDER_LABEL,
@@ -44,7 +48,7 @@ export default function WorkspacePatientFilePage() {
   // Authoring is doctor-only. /w is already doctor-gated by its layout; this
   // is the per-action check, and the write layer rejects non-doctors too.
   const canAuthorRecords = useCanAuthorRecords();
-  const createVisitRecord = useCreateVisitRecord();
+  const saveConsultation = useSaveConsultation();
 
   const [editOpen, setEditOpen] = useState(false);
   const [clinicalOpen, setClinicalOpen] = useState(false);
@@ -233,7 +237,15 @@ export default function WorkspacePatientFilePage() {
                 patientId={patient.id}
                 action={
                   canAuthorRecords ? (
-                    <Button size="sm" onClick={() => setConsultationOpen(true)}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        // Drop any record carried over from a previous
+                        // partial save before starting a new consultation.
+                        saveConsultation.startOver();
+                        setConsultationOpen(true);
+                      }}
+                    >
                       <Plus className="size-4" />
                       Record consultation
                     </Button>
@@ -307,14 +319,16 @@ export default function WorkspacePatientFilePage() {
                     )}`
                   : "No open visit — recorded against today"
               }
-              isSubmitting={createVisitRecord.isPending}
+              isSubmitting={saveConsultation.isPending}
               error={
-                createVisitRecord.isError
-                  ? "Could not save this record. Nothing was stored — try again."
-                  : undefined
+                !saveConsultation.isError
+                  ? undefined
+                  : saveConsultation.error instanceof PrescriptionsFailedError
+                    ? "The consultation was saved. Its prescriptions were not — saving again adds them to that same record, it won’t file a second consultation."
+                    : "Could not save this record. Nothing was stored — try again."
               }
               onSubmit={(values) =>
-                createVisitRecord.mutate(
+                saveConsultation.mutate(
                   {
                     patientId: patient.id,
                     visit: {

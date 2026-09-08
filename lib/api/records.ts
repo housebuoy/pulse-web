@@ -8,7 +8,9 @@
 import { api } from "@/lib/axios";
 import * as mock from "@/lib/mock/records";
 import type {
+  CreatePrescriptionsInput,
   CreateVisitRecordInput,
+  PrescriptionRecord,
   PatientRecords,
   RecordAuthor,
   VisitRecord,
@@ -43,6 +45,26 @@ export async function createVisitRecord(
   const { patientId, ...body } = input;
   const { data } = await api.post<VisitRecord>(
     `/patients/${patientId}/visits`,
+    body
+  );
+  return data;
+}
+
+/**
+ * Author prescriptions attached to a consultation record. Staff-side WRITE
+ * counterpart of the patient-side read — BACKEND-PENDING (psam-717): the real
+ * route POST /patients/{id}/prescriptions does not exist yet.
+ *
+ * Same author convention as createVisitRecord: server-stamped, never sent.
+ */
+export async function createPrescriptions(
+  input: CreatePrescriptionsInput,
+  author: RecordAuthor
+): Promise<PrescriptionRecord[]> {
+  if (USE_MOCK) return mock.createPrescriptions(input, author);
+  const { patientId, ...body } = input;
+  const { data } = await api.post<PrescriptionRecord[]>(
+    `/patients/${patientId}/prescriptions`,
     body
   );
   return data;

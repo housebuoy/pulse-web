@@ -10,6 +10,7 @@
 // See lib/types/records.ts.
 
 import type {
+  CreatePrescriptionsInput,
   CreateVisitRecordInput,
   LabResultRecord,
   PatientRecords,
@@ -218,6 +219,39 @@ export function createVisitRecord(
   };
   visits.push(record);
   return delay({ ...record });
+}
+
+/**
+ * Stands in for POST /patients/{id}/prescriptions (staff-scoped,
+ * backend-pending — psam-717). Writes one record per prescription, each tied
+ * to the visit record it was authored in.
+ *
+ * SCOPE: stores the medication name and regimen strings exactly as typed. No
+ * catalog lookup, no interaction or allergy cross-check against the patient,
+ * no dose validation. See lib/types/records.ts.
+ */
+export function createPrescriptions(
+  input: CreatePrescriptionsInput,
+  author: RecordAuthor
+): Promise<PrescriptionRecord[]> {
+  if (author.role !== "doctor") {
+    return Promise.reject(new Error("Only a doctor can author a prescription."));
+  }
+  const prescribedAt = new Date().toISOString();
+  const created: PrescriptionRecord[] = input.prescriptions.map((p) => ({
+    id: crypto.randomUUID(),
+    patientId: input.patientId,
+    visitRecordId: input.visitRecordId,
+    author,
+    prescribedAt,
+    medication: p.medication,
+    dose: p.dose,
+    frequency: p.frequency,
+    duration: p.duration,
+    instructions: p.instructions,
+  }));
+  prescriptions.push(...created);
+  return delay(created.map((p) => ({ ...p })));
 }
 
 export function resetRecords(): void {
