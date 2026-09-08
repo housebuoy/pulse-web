@@ -19,7 +19,6 @@ import { ResendTimer } from "@/components/onboarding/resend-timer";
 import { FormField } from "@/components/onboarding/form-field";
 import { useAuthState } from "@/hooks/use-workspace-session";
 import {
-  DEMO_PASSWORD,
   finalizeLogin,
   login,
   markDeviceTrusted,
@@ -202,16 +201,6 @@ export default function LoginPage() {
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-
-      <div className="mt-8 rounded-lg border border-dashed border-border p-4 text-body-sm text-fg-muted">
-        <p className="font-medium text-fg-secondary">Demo accounts (mock only)</p>
-        <p className="mt-1">Admin — sarah.jenkins@knust-hospital.test</p>
-        <p>Doctor — owusu@pulsehealth.test</p>
-        <p className="mt-1">
-          Password —{" "}
-          <span className="font-mono text-fg-secondary">{DEMO_PASSWORD}</span>
-        </p>
-      </div>
     </div>
   );
 }
