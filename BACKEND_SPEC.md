@@ -1039,6 +1039,110 @@ export interface FacilityAnalytics {
 export interface AnalyticsQuery { from: string; to: string; }
 ```
 
+### 5.11 Clinical records — `lib/types/records.ts`
+
+Added for the doctor-authored records work in `/w` (Phase 1: read).
+These are the **staff-scoped** shapes for the record history the patient
+already reads on the mobile Records tab (`GET /api/patients/me/records`).
+
+Header comment (normative — extends §7.5's "capture and show, never
+advise" line to *authoring*):
+> *"Pulse FAITHFULLY RECORDS clinician-authored content. It never
+> contributes clinical judgement of its own... nothing built on these
+> types may suggest a diagnosis, autocomplete or cross-check a
+> medication, validate a dose against any norm, flag a lab value as out
+> of range, or advise on a plan... 'Structured' here means the input is
+> organized — it does not mean the app is smart."*
+
+```ts
+export type RecordAuthorRole = "doctor" | "lab";
+
+export interface RecordAuthor {          // [server-only] stamped at write time
+  staffId: string; name: string; role: RecordAuthorRole;
+}
+
+export interface VisitContext {
+  visitId?: string;                      // see the note below
+  departmentId: string; departmentName: string;
+  startedAt?: string;                    // Patient.currentVisit.since
+}
+
+export interface VisitRecord {
+  id: string; patientId: string;
+  visit: VisitContext;
+  author: RecordAuthor;                  // [server-only]
+  recordedAt: string;                    // [server-only]
+  presentingComplaint: string; examination: string;
+  diagnosis: string;                     // FREE TEXT, never a picked code
+  plan: string; summary: string;
+}
+
+export interface PrescriptionRecord {
+  id: string; patientId: string; visitRecordId: string;
+  author: RecordAuthor;                  // [server-only]
+  prescribedAt: string;                  // [server-only]
+  medication: string;                    // FREE TEXT, no autocomplete/catalog
+  dose: string; frequency: string; duration: string;
+  instructions?: string;
+}
+
+export interface LabResultValue {
+  label: string; value: string;
+  referenceRange?: string;               // the lab's own printed range, verbatim
+}
+
+export interface LabResultRecord {
+  id: string; patientId: string; visitRecordId?: string;
+  author: RecordAuthor;                  // role is always "lab"
+  reportedAt: string;
+  testName: string; specimen?: string;
+  values: LabResultValue[]; notes?: string;
+}
+
+export interface PatientRecords {        // the mobile Records tab payload
+  visits: VisitRecord[];
+  prescriptions: PrescriptionRecord[];
+  labResults: LabResultRecord[];
+}
+```
+
+Authoring inputs (doctor-only, backend-pending — §6.12):
+
+```ts
+export interface CreateVisitRecordInput {   // author/recordedAt NOT sent
+  patientId: string; visit: VisitContext;
+  presentingComplaint: string; examination: string;
+  diagnosis: string; plan: string; summary: string;
+}
+
+export interface PrescriptionDraft {        // plain strings, no catalog
+  medication: string; dose: string; frequency: string; duration: string;
+  instructions?: string;
+}
+
+export interface CreatePrescriptionsInput { // author/prescribedAt NOT sent
+  patientId: string; visitRecordId: string;
+  prescriptions: PrescriptionDraft[];
+}
+```
+
+**Notes for the backend**:
+- All three lists are **newest-first** and always arrays, never null
+  (`lib/mock/records.ts` sorts on `recordedAt`/`prescribedAt`/
+  `reportedAt` descending).
+- `VisitContext.visitId` is optional because **the frontend has no stable
+  visit id today** — `Patient.currentVisit` carries no id (§10.3). Until
+  the backend owns a real `Visit` entity, a record identifies its visit
+  by department + start time. Once `Visit` exists, `visitId` should
+  become required and `departmentId`/`startedAt` become denormalized
+  copies of it.
+- `LabResultRecord` is **lab-authored, never doctor-authored**. `/w`
+  renders it read-only; there is no staff-side write endpoint for it in
+  this frontend (§6.11).
+- `referenceRange` is stored and displayed **verbatim as part of the
+  lab's report**. The app never compares `value` against it and never
+  flags a value as abnormal — see §7.5.
+
 ---
 
 ## 6. Endpoints (exhaustive — every function in `lib/api/*`)
@@ -1198,6 +1302,80 @@ that didn't exist in the codebase until §4 was built.
 See §4.3 for the full business-rule extraction (auto-approval caveat,
 exact field shapes) and §4.4 for what a real `POST` here should trigger
 on the platform-operator side instead of the mock's immediate token.
+
+### 6.11 Clinical records — `lib/api/records.ts`
+
+| Method | Path | Params | Body | Response | Mock fallback | Hook |
+|---|---|---|---|---|---|---|
+| GET | `/patients/{id}/records` | path `id` | — | `PatientRecords` | `listPatientRecords(patientId)` | `usePatientRecords(patientId)` |
+
+This is the **staff-scoped counterpart** of the existing patient-side
+`GET /api/patients/me/records` that backs the mobile Records tab: same
+projection, addressed by patient id, authorized as facility staff rather
+than as the patient. It must be tenant-filtered like every other
+facility-plane read (§2.1) and RBAC-gated (§8.2) — patient records are
+never reachable from the platform-operator plane (§3.3).
+
+Not polled — `hooks/use-records.ts` sets no `refetchInterval`; the query
+key `["records","patient",id]` is invalidated by the authoring mutations
+instead.
+
+**Write endpoints are backend-pending (psam-717)** — see §6.12.
+
+### 6.12 Clinical records — staff-side WRITES (BACKEND-PENDING, psam-717)
+
+These are the **staff-side write counterparts** of the patient-side reads in
+§6.11. **None of them exist on the backend yet** (ticket psam-717). The
+frontend authoring UI is built and wired through the normal swap layer
+(`lib/api/records.ts`), resolving from `lib/mock/records.ts` until the routes
+land — at which point flipping `USE_MOCK` is the only change needed.
+
+| Method | Path | Params | Body | Response | Mock fallback | Hook |
+|---|---|---|---|---|---|---|
+| POST | `/patients/{id}/visits` | path `id` | `Omit<CreateVisitRecordInput,"patientId">` — `{visit, presentingComplaint, examination, diagnosis, plan, summary}` | `VisitRecord` | `createVisitRecord(input, author)` | `useSaveConsultation()` |
+| POST | `/patients/{id}/prescriptions` | path `id` | `Omit<CreatePrescriptionsInput,"patientId">` — `{visitRecordId, prescriptions[]}` | `PrescriptionRecord[]` | `createPrescriptions(input, author)` | `useSaveConsultation()` |
+
+**Contract notes**:
+- **The client never sends author or timestamp.** `RecordAuthor` and
+  `recordedAt` are server-stamped from the caller's JWT and server clock.
+  `lib/api/records.ts` takes an `author` argument *only* so the mock can
+  stamp what the real server will; it is deliberately excluded from the
+  request body.
+- **Doctor-only.** RBAC must reject any non-`doctor` caller (§8.2). The mock
+  rejects it too (`createVisitRecord` throws for a non-doctor author), and
+  the UI hides the control (`useCanAuthorRecords()` in `hooks/use-records.ts`)
+  — but as everywhere else in this doc, the frontend check is UX and the
+  backend check is the enforcement.
+- **Store verbatim.** Every clinical field is free text typed by the doctor.
+  The server must not normalize, code, spell-correct, expand, or interpret
+  any of it, and must not derive a summary. `diagnosis` in particular is a
+  free-text column, **not** a coded-terminology foreign key — see §7.5.
+- **`visit`** carries `{departmentId, departmentName, startedAt?}` and an
+  optional `visitId`, because no stable visit id exists frontend-side yet
+  (§5.11, §10.3). When a real `Visit` entity lands, the server should resolve
+  or create the visit and return the record with `visit.visitId` populated.
+- **Records are append-only in this UI.** There is no edit or delete path for
+  an authored record anywhere in the frontend — consistent with §7.4's
+  soft-delete posture, an amendment model (if one is wanted) is unspecified
+  and is an open question, not something to assume.
+- **The two writes are sequenced, not transactional.** Prescriptions are
+  authored inside the consultation form but need the visit record's id to
+  attach to, so `useSaveConsultation()` posts the visit first, then the
+  prescriptions. Nothing spans the two calls. If the second fails, the visit
+  record is already on file and the hook raises a distinct
+  `PrescriptionsFailedError`; a retry re-sends **only** the prescriptions
+  against the record it already created, because filing a second copy of an
+  append-only consultation would be unrecoverable. **A server-side
+  `POST /patients/{id}/visits` that accepted the prescriptions in the same
+  body would remove the split entirely** — worth deciding when psam-717 is
+  designed, and the frontend would collapse to one call.
+- **Prescriptions are per-visit and unbounded.** A visit may carry zero or
+  many; each becomes its own `PrescriptionRecord` row sharing the batch's
+  `prescribedAt`. A row the doctor added but left with an empty medication
+  name is dropped client-side and never sent.
+- **Lab results have no staff-side write endpoint here.** They are
+  lab-authored (§5.11) and reach this system from the laboratory, not from
+  `/w`.
 
 ---
 
@@ -1409,6 +1587,33 @@ domains, not incidental phrasing:
 - No drug-interaction or allergy cross-checking should be built into
   `PATCH /patients/{id}/clinical-record`, even though it would be a
   natural feature — it is explicitly out of scope by design.
+
+**Extension to authoring** (`lib/types/records.ts:6-16`, added with the
+doctor-authored records work in `/w`): the same line holds for content the
+clinician *writes*, not just content the app *shows*. Pulse faithfully
+records what the clinician authored and contributes no judgement of its own:
+
+- `POST /patients/{id}/visits` and `POST /patients/{id}/prescriptions`
+  (§6.12) must **store every clinical field verbatim** — no normalization,
+  no coding, no spell-correction or expansion, no server-derived summary.
+- `VisitRecord.diagnosis` is a **free-text column, not a coded-terminology
+  foreign key**. The UI renders it as a plain textarea specifically so the
+  app never proposes a diagnosis (`consultation-record-dialog.tsx`).
+- `PrescriptionRecord.medication` is **free text with no drug catalog
+  behind it**. There is no autocomplete endpoint to build, no interaction
+  checking, no cross-reference against `Patient.allergies`, and no
+  validation of `dose`/`frequency`/`duration` against any clinical norm.
+  The server may check they are non-empty strings; nothing more
+  (`components/workspace/records/prescription-fields.tsx` says the same
+  thing at the input site).
+- Lab `referenceRange` is stored and returned as the laboratory printed
+  it. Neither the server nor the UI compares it against `value` or
+  derives an abnormal flag.
+
+That boundary is what keeps Pulse a record-keeping system rather than a
+medical device — it applies with more force to authoring than to display,
+because an app that suggests clinical content is contributing to the
+decision, not recording it.
 
 ### 7.6 Staff duty & account status
 

@@ -1,66 +1,111 @@
-// Clinical record API — staff-side access + authoring (backend issue #41).
-// Mock mode returns empty history and echoes a minimal created record so the
-// UI is navigable without a backend; real mode hits /api/patients/{id}/records.
 
-import { api } from "@/lib/axios";
-import type {
-  AddPrescriptionInput,
-  AddVisitNoteInput,
-  PatientRecords,
-  PrescriptionRecord,
-  VisitRecord,
-} from "@/lib/types/records";
+export type RecordAuthorRole = "doctor" | "lab";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-export async function fetchPatientRecords(
-  patientId: string,
-): Promise<PatientRecords> {
-  if (USE_MOCK) return { visits: [], labResults: [], prescriptions: [] };
-  const { data } = await api.get<PatientRecords>(`/patients/${patientId}/records`);
-  return data;
+export interface RecordAuthor {
+  staffId: string;
+  name: string;
+  role: RecordAuthorRole;
 }
 
-export async function addVisitNote(
-  input: AddVisitNoteInput,
-): Promise<VisitRecord> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 200));
-    return {
-      id: `mock-visit-${Date.now()}`,
-      department: "Cardiology",
-      hospital: "Demo Hospital",
-      date: input.visitDate ?? new Date().toISOString().slice(0, 10),
-      doctor: "Dr. Demo",
-      summary: input.summary,
-    };
-  }
-  const { patientId, ...body } = input;
-  const { data } = await api.post<VisitRecord>(
-    `/patients/${patientId}/records/visits`,
-    body,
-  );
-  return data;
+
+export interface VisitContext {
+  visitId?: string;
+  departmentId: string;
+  departmentName: string;
+  startedAt?: string;
 }
 
-export async function addPrescription(
-  input: AddPrescriptionInput,
-): Promise<PrescriptionRecord> {
-  if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 200));
-    return {
-      id: `mock-rx-${Date.now()}`,
-      medication: input.medication,
-      dose: input.dose,
-      prescribingDoctor: "Dr. Demo",
-      hospital: "Demo Hospital",
-      date: input.prescribedDate ?? new Date().toISOString().slice(0, 10),
-    };
-  }
-  const { patientId, ...body } = input;
-  const { data } = await api.post<PrescriptionRecord>(
-    `/patients/${patientId}/records/prescriptions`,
-    body,
-  );
-  return data;
+
+export interface VisitRecord {
+  id: string;
+  patientId: string;
+  visit: VisitContext;
+  author: RecordAuthor;
+  recordedAt: string;
+
+  presentingComplaint: string;
+  examination: string;
+  diagnosis: string;
+  plan: string;
+  summary: string;
+}
+
+export interface PrescriptionRecord {
+  id: string;
+  patientId: string;
+  visitRecordId: string;
+  author: RecordAuthor;
+  prescribedAt: string;
+
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+export interface LabResultValue {
+  label: string;
+  value: string;
+  referenceRange?: string;
+}
+
+export interface LabResultRecord {
+  id: string;
+  patientId: string;
+  visitRecordId?: string;
+  author: RecordAuthor;
+  reportedAt: string;
+
+  testName: string;
+  specimen?: string;
+  values: LabResultValue[];
+  notes?: string;
+}
+
+export interface PatientRecords {
+  visits: VisitRecord[];
+  prescriptions: PrescriptionRecord[];
+  labResults: LabResultRecord[];
+}
+
+
+export interface CreateVisitRecordInput {
+  patientId: string;
+  visit: VisitContext;
+
+  presentingComplaint: string;
+  examination: string;
+  diagnosis: string;
+  plan: string;
+  summary: string;
+}
+
+
+export interface PrescriptionDraft {
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+export interface CreatePrescriptionsInput {
+  patientId: string;
+  visitRecordId: string;
+  prescriptions: PrescriptionDraft[];
+}
+
+
+export interface AddVisitNoteInput {
+  patientId: string;
+  summary: string;
+  visitDate?: string; 
+}
+
+export interface AddPrescriptionInput {
+  patientId: string;
+  medication: string;
+  dose: string;
+  prescribedDate?: string; 
 }

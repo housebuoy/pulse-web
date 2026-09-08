@@ -1,9 +1,4 @@
-// Mock auth for local development and previews. Real enforcement lives in
-// Spring Boot — these fixtures never reach prod. Everything below is the
-// single swap point for later: replace login()/verifyLoginOtp() with real
-// API calls and resolveSession() with real JWT decode, keep every call site
-// (hooks/use-workspace-session.ts, components/auth/require-role.tsx,
-// app/(auth)/login/page.tsx) unchanged.
+
 
 import { api } from "@/lib/axios";
 import type {
@@ -12,11 +7,9 @@ import type {
   WorkspaceSession,
 } from "@/lib/types/auth";
 
-// The swap flag shared by every other domain's lib/api/*.ts — mock is the
-// default; set NEXT_PUBLIC_USE_MOCK=false to hit the Spring Boot backend.
+
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
-/** Backend POST /api/auth/login response shape (LoginResponse). */
 interface LoginResponse {
   token: string | null;
   role: string;
@@ -51,12 +44,7 @@ export const MOCK_ADMIN_SESSION: WorkspaceSession = {
   title: "Chief Administrator",
 };
 
-// ---- Login ----
-//
-// Mock-only: any of the two seeded emails below signs in with the shared
-// demo password. Real validation (password hashing, lockouts, rate
-// limiting) is a backend concern — same permissiveness pattern as every
-// other mock in this repo (see lib/mock/settings.ts applyPasswordChange).
+
 export const DEMO_PASSWORD = "Password123!";
 
 const ACCOUNTS: WorkspaceSession[] = [MOCK_ADMIN_SESSION, MOCK_DOCTOR_SESSION];
@@ -145,7 +133,15 @@ export async function fetchSession(token: string): Promise<WorkspaceSession> {
 // bearer token, and the exact key the /d sidebar's logout already clears —
 // this is the one existing thread this file pulls on, not a parallel store.
 const TOKEN_KEY = "pulse_token";
+const TOKEN_EXPIRES_KEY = "pulse_token_expires_at";
 const TRUSTED_DEVICE_KEY = "pulse_trusted_device";
+
+// Mock convenience only: a real session's lifetime is enforced by the
+// backend (JWT `exp` claim, checked server-side on every request) — the
+// client never gets to decide it's still logged in. This client-side
+// timestamp exists purely so the demo can show a session actually going
+// stale instead of sitting valid in localStorage forever.
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 
 function resolveSession(token: string | null): WorkspaceSession | null {
   if (!token) return null;
@@ -158,13 +154,24 @@ function resolveSession(token: string | null): WorkspaceSession | null {
 
 export function getStoredSession(): WorkspaceSession | null {
   if (typeof window === "undefined") return null;
+  const expiresAt = Number(window.localStorage.getItem(TOKEN_EXPIRES_KEY));
+  if (!expiresAt || Date.now() > expiresAt) {
+    clearSession();
+    return null;
+  }
   return resolveSession(window.localStorage.getItem(TOKEN_KEY));
 }
 
+/** Persists the token from a completed login (password, or password+OTP).
+ *  Also stamps a 24h mock expiry — see SESSION_DURATION_MS above. */
 /** Persists the token from a completed login (password, or password+OTP). */
 export function finalizeLogin(token: string | null): void {
-  if (typeof window !== "undefined" && token) {
+   if (typeof window !== "undefined" && token) {
     window.localStorage.setItem(TOKEN_KEY, token);
+    window.localStorage.setItem(
+      TOKEN_EXPIRES_KEY,
+      String(Date.now() + SESSION_DURATION_MS),
+    );
   }
 }
 
@@ -177,6 +184,7 @@ export function tokenForSession(session: WorkspaceSession): string {
 export function clearSession(): void {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(TOKEN_EXPIRES_KEY);
   }
 }
 

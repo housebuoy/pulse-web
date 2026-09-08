@@ -29,7 +29,7 @@ export function DepartmentsStep({ onNext }: { onNext: () => void }) {
 
   return (
     <>
-      <StepProgress current={2} total={3} onBack={() => router.back()} />
+      <StepProgress current={1} total={2} onBack={() => router.back()} />
       <StepHeader
         title="How does your facility operate?"
         description="Configure your public-facing operational details."
