@@ -3,6 +3,7 @@
 // CONSTRAINT — record-keeping only: display and edit vitals/allergies/meds,
 // but no interpretation, no flagging, no dosage or triage suggestions.
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
@@ -15,8 +16,24 @@ import { GENDER_LABEL } from "@/lib/patient-utils";
 
 export default function WorkspacePatientsPage() {
   const session = useWorkspaceSession();
-  const { data: patients = [], isLoading } = usePatients();
-  const { data: entries = [] } = useQueueEntries(session.departmentId);
+  // Full query objects (not just data) — the empty state must not flash
+  // while a background refetch is in flight after client-side navigation.
+  const patientsQuery = usePatients();
+  const entriesQuery = useQueueEntries(session.departmentId);
+  const patients = patientsQuery.data ?? [];
+  const entries = entriesQuery.data ?? [];
+
+  // Latch: only show "No current patients" once both queries have rendered a
+  // settled (non-fetching) frame. On route remount TanStack serves cached
+  // data instantly while revalidating, and a stale filtered view can compute
+  // empty for a beat — that beat should be shimmer, not the empty state.
+  const [dataSettled, setDataSettled] = useState(false);
+  const resolving = patientsQuery.isPending || entriesQuery.isPending;
+  const fetching = patientsQuery.isFetching || entriesQuery.isFetching;
+  useEffect(() => {
+    if (resolving || fetching) return;
+    setDataSettled(true);
+  }, [resolving, fetching]);
 
   // Patients this doctor is currently seeing (in_consultation AND the queue
   // entry belongs to them — matched by stable clinicianId, name as fallback
@@ -41,6 +58,10 @@ export default function WorkspacePatientsPage() {
         doctorEntryIds.has(p.name)),
   );
 
+  // Shimmer while there could still be data in flight; the empty state only
+  // shows once the queries have settled (see dataSettled above).
+  const showSkeleton = myPatients.length === 0 && !dataSettled;
+
   return (
     <>
       <DashboardHeader title="My Patients" />
@@ -55,7 +76,7 @@ export default function WorkspacePatientsPage() {
             <div className="col-span-3 text-right">Status</div>
           </div>
 
-          {isLoading && myPatients.length === 0 ? (
+          {showSkeleton ? (
             <div className="divide-y divide-border">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4">
