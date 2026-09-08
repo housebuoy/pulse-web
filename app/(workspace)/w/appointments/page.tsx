@@ -31,33 +31,26 @@ function AppointmentsBody() {
   const [view, setView] = useAppointmentView();
   const update = useUpdateAppointment();
 
-  // List: single-day fetch scoped to this doctor.
-  const { data: all = [], isLoading } = useAppointments({ date });
-  const mine = useMemo(
-    () => all.filter((a) => a.doctorName === session.name),
-    [all, session.name],
-  );
+  // Server-scoped to this clinician via the stable staffId (email-linked to
+  // the legacy doctor) — a profile rename never orphans the schedule.
+  const { data: mine = [], isLoading } = useAppointments({
+    date,
+    staffId: session.staffId,
+  });
 
   // Week / month: range fetch scoped to this doctor.
   const weekRange = useMemo(() => getWeekRange(date), [date]);
   const monthRange = useMemo(() => getMonthRange(date), [date]);
 
-  const { data: weekAll = [], isLoading: weekLoading } = useAppointmentsRange(
+  const { data: weekMine = [], isLoading: weekLoading } = useAppointmentsRange(
     weekRange.from,
     weekRange.to,
+    { staffId: session.staffId },
   );
-  const { data: monthAll = [], isLoading: monthLoading } = useAppointmentsRange(
+  const { data: monthMine = [], isLoading: monthLoading } = useAppointmentsRange(
     monthRange.from,
     monthRange.to,
-  );
-
-  const weekMine = useMemo(
-    () => weekAll.filter((a) => a.doctorName === session.name),
-    [weekAll, session.name],
-  );
-  const monthMine = useMemo(
-    () => monthAll.filter((a) => a.doctorName === session.name),
-    [monthAll, session.name],
+    { staffId: session.staffId },
   );
 
   const handleAction = (id: string, next: AppointmentStatus) =>
