@@ -70,6 +70,9 @@ export interface LoginResult {
   // null on the first login step — the real 2FA flow issues the token
   // from verifyLoginOtp after the OTP is confirmed (lib/api/auth.ts).
   token: string | null;
+  // Dev-mode only: the backend echoes the verification code (otp.dev-mode).
+  // Absent in prod — the UI shows it in a toast to speed up manual testing.
+  devOtp?: string | null;
 }
 
 export function login({ email, password }: LoginCredentials): Promise<LoginResult> {
@@ -78,7 +81,11 @@ export function login({ email, password }: LoginCredentials): Promise<LoginResul
     // issues a verification code; token comes from verifyLoginOtp.
     return api
       .post<LoginResponse>("/auth/login", { email, password })
-      .then(({ data }) => ({ session: data.session, token: data.token ?? null }));
+      .then(({ data }) => ({
+        session: data.session,
+        token: data.token ?? null,
+        devOtp: data.devOtp ?? null,
+      }));
   }
   const session = ACCOUNTS.find(
     (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
