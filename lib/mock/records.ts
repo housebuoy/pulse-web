@@ -10,9 +10,11 @@
 // See lib/types/records.ts.
 
 import type {
+  CreateVisitRecordInput,
   LabResultRecord,
   PatientRecords,
   PrescriptionRecord,
+  RecordAuthor,
   VisitRecord,
 } from "@/lib/types/records";
 
@@ -184,6 +186,38 @@ export function listPatientRecords(patientId: string): Promise<PatientRecords> {
       .sort((a, b) => byNewest(a.reportedAt, b.reportedAt))
       .map((l) => ({ ...l })),
   });
+}
+
+/**
+ * Stands in for POST /patients/{id}/visits (staff-scoped, backend-pending —
+ * psam-717). Stores the consultation exactly as typed: no normalization, no
+ * validation of clinical content, no derived fields. The author and
+ * recordedAt stamp is applied here because the real server applies it — the
+ * client never sends either.
+ */
+export function createVisitRecord(
+  input: CreateVisitRecordInput,
+  author: RecordAuthor
+): Promise<VisitRecord> {
+  if (author.role !== "doctor") {
+    return Promise.reject(
+      new Error("Only a doctor can author a consultation record.")
+    );
+  }
+  const record: VisitRecord = {
+    id: crypto.randomUUID(),
+    patientId: input.patientId,
+    visit: { ...input.visit },
+    author,
+    recordedAt: new Date().toISOString(),
+    presentingComplaint: input.presentingComplaint,
+    examination: input.examination,
+    diagnosis: input.diagnosis,
+    plan: input.plan,
+    summary: input.summary,
+  };
+  visits.push(record);
+  return delay({ ...record });
 }
 
 export function resetRecords(): void {

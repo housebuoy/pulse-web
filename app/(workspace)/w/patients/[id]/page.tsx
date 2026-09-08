@@ -17,12 +17,15 @@ import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
 import { RecordHistory } from "@/components/workspace/records/record-history";
+import { ConsultationRecordDialog } from "@/components/workspace/records/consultation-record-dialog";
 import {
   usePatient,
   useRecordVitals,
   useUpdateClinicalRecord,
   useUpdatePatient,
 } from "@/hooks/use-patients";
+import { useCanAuthorRecords, useCreateVisitRecord } from "@/hooks/use-records";
+import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import {
   GENDER_LABEL,
   VISIT_STATUS_LABEL,
@@ -33,14 +36,20 @@ import { formatJoined, formatShortDate, formatTime } from "@/lib/format";
 
 export default function WorkspacePatientFilePage() {
   const { id } = useParams<{ id: string }>();
+  const session = useWorkspaceSession();
   const { data: patient, isLoading } = usePatient(id);
   const updatePatient = useUpdatePatient();
   const updateClinicalRecord = useUpdateClinicalRecord();
   const recordVitals = useRecordVitals();
+  // Authoring is doctor-only. /w is already doctor-gated by its layout; this
+  // is the per-action check, and the write layer rejects non-doctors too.
+  const canAuthorRecords = useCanAuthorRecords();
+  const createVisitRecord = useCreateVisitRecord();
 
   const [editOpen, setEditOpen] = useState(false);
   const [clinicalOpen, setClinicalOpen] = useState(false);
   const [vitalsOpen, setVitalsOpen] = useState(false);
+  const [consultationOpen, setConsultationOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -220,7 +229,17 @@ export default function WorkspacePatientFilePage() {
 
               {/* record history — read-only context before authoring. Same
                   data the patient reads on the mobile Records tab. */}
-              <RecordHistory patientId={patient.id} />
+              <RecordHistory
+                patientId={patient.id}
+                action={
+                  canAuthorRecords ? (
+                    <Button size="sm" onClick={() => setConsultationOpen(true)}>
+                      <Plus className="size-4" />
+                      Record consultation
+                    </Button>
+                  ) : undefined
+                }
+              />
 
               {/* current visit */}
               {patient.currentVisit && (
@@ -276,6 +295,43 @@ export default function WorkspacePatientFilePage() {
               )
             }
           />
+          {canAuthorRecords && (
+            <ConsultationRecordDialog
+              open={consultationOpen}
+              onOpenChange={setConsultationOpen}
+              patientName={patient.name}
+              contextLabel={
+                patient.currentVisit
+                  ? `${patient.currentVisit.departmentName} · in since ${formatTime(
+                      patient.currentVisit.since,
+                    )}`
+                  : "No open visit — recorded against today"
+              }
+              isSubmitting={createVisitRecord.isPending}
+              error={
+                createVisitRecord.isError
+                  ? "Could not save this record. Nothing was stored — try again."
+                  : undefined
+              }
+              onSubmit={(values) =>
+                createVisitRecord.mutate(
+                  {
+                    patientId: patient.id,
+                    visit: {
+                      departmentId:
+                        patient.currentVisit?.departmentId ?? session.departmentId,
+                      departmentName:
+                        patient.currentVisit?.departmentName ??
+                        session.departmentName,
+                      startedAt: patient.currentVisit?.since,
+                    },
+                    ...values,
+                  },
+                  { onSuccess: () => setConsultationOpen(false) },
+                )
+              }
+            />
+          )}
           <VitalsDialog
             open={vitalsOpen}
             onOpenChange={setVitalsOpen}

@@ -1300,8 +1300,46 @@ Not polled — `hooks/use-records.ts` sets no `refetchInterval`; the query
 key `["records","patient",id]` is invalidated by the authoring mutations
 instead.
 
-**Write endpoints are backend-pending (psam-717)** — see §6.12 once
-Phase 2/3 land.
+**Write endpoints are backend-pending (psam-717)** — see §6.12.
+
+### 6.12 Clinical records — staff-side WRITES (BACKEND-PENDING, psam-717)
+
+These are the **staff-side write counterparts** of the patient-side reads in
+§6.11. **None of them exist on the backend yet** (ticket psam-717). The
+frontend authoring UI is built and wired through the normal swap layer
+(`lib/api/records.ts`), resolving from `lib/mock/records.ts` until the routes
+land — at which point flipping `USE_MOCK` is the only change needed.
+
+| Method | Path | Params | Body | Response | Mock fallback | Hook |
+|---|---|---|---|---|---|---|
+| POST | `/patients/{id}/visits` | path `id` | `Omit<CreateVisitRecordInput,"patientId">` — `{visit, presentingComplaint, examination, diagnosis, plan, summary}` | `VisitRecord` | `createVisitRecord(input, author)` | `useCreateVisitRecord()` |
+
+**Contract notes**:
+- **The client never sends author or timestamp.** `RecordAuthor` and
+  `recordedAt` are server-stamped from the caller's JWT and server clock.
+  `lib/api/records.ts` takes an `author` argument *only* so the mock can
+  stamp what the real server will; it is deliberately excluded from the
+  request body.
+- **Doctor-only.** RBAC must reject any non-`doctor` caller (§8.2). The mock
+  rejects it too (`createVisitRecord` throws for a non-doctor author), and
+  the UI hides the control (`useCanAuthorRecords()` in `hooks/use-records.ts`)
+  — but as everywhere else in this doc, the frontend check is UX and the
+  backend check is the enforcement.
+- **Store verbatim.** Every clinical field is free text typed by the doctor.
+  The server must not normalize, code, spell-correct, expand, or interpret
+  any of it, and must not derive a summary. `diagnosis` in particular is a
+  free-text column, **not** a coded-terminology foreign key — see §7.5.
+- **`visit`** carries `{departmentId, departmentName, startedAt?}` and an
+  optional `visitId`, because no stable visit id exists frontend-side yet
+  (§5.11, §10.3). When a real `Visit` entity lands, the server should resolve
+  or create the visit and return the record with `visit.visitId` populated.
+- **Records are append-only in this UI.** There is no edit or delete path for
+  an authored record anywhere in the frontend — consistent with §7.4's
+  soft-delete posture, an amendment model (if one is wanted) is unspecified
+  and is an open question, not something to assume.
+- **Lab results have no staff-side write endpoint here.** They are
+  lab-authored (§5.11) and reach this system from the laboratory, not from
+  `/w`.
 
 ---
 
@@ -1513,6 +1551,26 @@ domains, not incidental phrasing:
 - No drug-interaction or allergy cross-checking should be built into
   `PATCH /patients/{id}/clinical-record`, even though it would be a
   natural feature — it is explicitly out of scope by design.
+
+**Extension to authoring** (`lib/types/records.ts:6-16`, added with the
+doctor-authored records work in `/w`): the same line holds for content the
+clinician *writes*, not just content the app *shows*. Pulse faithfully
+records what the clinician authored and contributes no judgement of its own:
+
+- `POST /patients/{id}/visits` (§6.12) must **store every clinical field
+  verbatim** — no normalization,
+  no coding, no spell-correction or expansion, no server-derived summary.
+- `VisitRecord.diagnosis` is a **free-text column, not a coded-terminology
+  foreign key**. The UI renders it as a plain textarea specifically so the
+  app never proposes a diagnosis (`consultation-record-dialog.tsx`).
+- Lab `referenceRange` is stored and returned as the laboratory printed
+  it. Neither the server nor the UI compares it against `value` or
+  derives an abnormal flag.
+
+That boundary is what keeps Pulse a record-keeping system rather than a
+medical device — it applies with more force to authoring than to display,
+because an app that suggests clinical content is contributing to the
+decision, not recording it.
 
 ### 7.6 Staff duty & account status
 

@@ -108,3 +108,20 @@ export interface PatientRecords {
   prescriptions: PrescriptionRecord[];
   labResults: LabResultRecord[];
 }
+
+// ---------------------------------------------------------------------------
+// Authoring inputs (doctor-only). Backend-pending — psam-717.
+// ---------------------------------------------------------------------------
+
+/** What the doctor types into the consultation form. Author and timestamp are
+ *  NOT here: the server stamps both, the client never asserts them. */
+export interface CreateVisitRecordInput {
+  patientId: string;
+  visit: VisitContext;
+
+  presentingComplaint: string;
+  examination: string;
+  diagnosis: string;
+  plan: string;
+  summary: string;
+}
