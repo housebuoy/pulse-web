@@ -25,6 +25,11 @@ export function AppointmentRow({
   const actions = actionsFor(appointment.status);
   const isEmergency = appointment.priority === "emergency";
   const isPaid = appointment.paymentStatus === "paid";
+  // Primary (filled) action always renders last so it hugs the row's right
+  // edge — every primary sits on the same vertical line across all rows
+  // regardless of how wide the secondary actions are.
+  const primaryActions = actions.filter((a) => a.variant === "default");
+  const secondaryActions = actions.filter((a) => a.variant !== "default");
 
   return (
     <div className="grid grid-cols-12 items-center gap-4 px-5 py-4">
@@ -106,7 +111,18 @@ export function AppointmentRow({
             Mark paid
           </Button>
         )}
-        {actions.map((action) => (
+        {secondaryActions.map((action) => (
+          <Button
+            key={action.key}
+            size="sm"
+            variant={action.variant}
+            disabled={isMutating}
+            onClick={() => onAction(appointment.id, action.next)}
+          >
+            {action.label}
+          </Button>
+        ))}
+        {primaryActions.map((action) => (
           <Button
             key={action.key}
             size="sm"
