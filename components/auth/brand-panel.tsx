@@ -1,6 +1,8 @@
 // components/auth/brand-panel.tsx
 import { Activity, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+// import pulseLogo from "@/assets/logos/pulse-logo.png";
+import Image from "next/image";
 
 export function BrandPanel({ className }: { className?: string }) {
   return (
@@ -25,7 +27,13 @@ export function BrandPanel({ className }: { className?: string }) {
         {/* Logo */}
         <div className="flex items-center gap-2 font-wordmark text-wordmark">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-brand">
-            <Activity className="h-6 w-6" />
+            <Image
+              src="/assets/logos/pulse-logo.png"
+              alt="Pulse Health"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
+            />
           </div>
           Pulse Health
         </div>
@@ -36,7 +44,9 @@ export function BrandPanel({ className }: { className?: string }) {
             Enterprise Edition v1.0
           </span>
           <h1 className="mb-6 text-hero">
-            Eliminate the<br />Waiting Room
+            Eliminate the
+            <br />
+            Waiting Room
           </h1>
           <p className="mb-10 text-body-lg text-white/80">
             Seamless patient flow, automated scheduling, and real-time queue
@@ -50,7 +60,9 @@ export function BrandPanel({ className }: { className?: string }) {
               <div className="h-10 w-10 rounded-full border-2 border-brand bg-gray-400" />
             </div>
             <p className="text-body-sm text-white/80">
-              Built for modern, high-efficiency<br />healthcare facilities.
+              Built for modern, high-efficiency
+              <br />
+              healthcare facilities.
             </p>
           </div>
         </div>

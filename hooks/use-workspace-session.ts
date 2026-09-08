@@ -45,6 +45,9 @@ export function useAuthState(): AuthState {
   useEffect(() => {
     // Client-only read (no localStorage during SSR) — deliberately not
     // deferred to an event callback; see the file-level note.
+    // getStoredSession() also treats an expired mock session (see
+    // SESSION_DURATION_MS in lib/mock/auth.ts) as no session and clears it,
+    // so an expired token here behaves identically to never having logged in.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     const token =
       typeof window !== "undefined"

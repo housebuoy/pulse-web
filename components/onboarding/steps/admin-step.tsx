@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,17 +16,18 @@ import { useOnboardingStore } from "@/store/use-onboarding-store";
 
 export function AdminStep({ onNext }: { onNext: () => void }) {
   const router = useRouter();
-  const updateData = useOnboardingStore((state) => state.updateData);
+  // Already verified on /request-access (requester === admin, one email) —
+  // seeded into the store as soon as approval resolves, see
+  // app/(auth)/onboarding/page.tsx. Displayed read-only below; never
+  // re-collected here.
+  const email = useOnboardingStore((state) => state.data.adminEmail);
 
   // Password is deliberately kept local-only — never written to the
   // onboarding store (and therefore never to sessionStorage), even though
-  // that means it doesn't survive a refresh on this step. adminEmail is
-  // non-sensitive and IS persisted, so verify-email can address the code
-  // it "sends" even after a refresh.
+  // that means it doesn't survive a refresh on this step.
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
-    email: "",
     password: "",
     confirmPassword: "",
     agreed: false,
@@ -53,13 +55,12 @@ export function AdminStep({ onNext }: { onNext: () => void }) {
     }
     if (!form.agreed) return;
 
-    updateData({ adminEmail: form.email });
     onNext();
   };
 
   return (
     <>
-      <StepProgress current={3} total={3} onBack={() => router.back()} />
+      <StepProgress current={2} total={2} onBack={() => router.back()} />
       <StepHeader
         title="Create administrator account"
         description="This account will manage staff, doctors, and system settings."
@@ -79,16 +80,20 @@ export function AdminStep({ onNext }: { onNext: () => void }) {
             onChange={(e) => set("fullName", e.target.value)} placeholder="e.g. Dr. Sarah Jenkins" required />
         </FormField>
 
-        <div className="grid grid-cols-2 gap-6">
-          <FormField label="Admin Phone" htmlFor="phone">
-            <Input id="phone" value={form.phone}
-              onChange={(e) => set("phone", e.target.value)} placeholder="+233 24 XXX XXXX" required />
-          </FormField>
-          <FormField label="Admin Email" htmlFor="email">
-            <Input id="email" type="email" value={form.email}
-              onChange={(e) => set("email", e.target.value)} placeholder="admin@facility.com" required />
-          </FormField>
-        </div>
+        <FormField label="Admin Phone" htmlFor="phone">
+          <Input id="phone" value={form.phone}
+            onChange={(e) => set("phone", e.target.value)} placeholder="+233 24 XXX XXXX" required />
+        </FormField>
+
+        <FormField label="Admin Email" htmlFor="email">
+          <div className="relative">
+            <Input id="email" type="email" value={email} disabled className="pr-10" />
+            <CheckCircle2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-success" />
+          </div>
+          <p className="text-caption text-fg-muted">
+            Verified when you requested access.
+          </p>
+        </FormField>
 
         <div className="space-y-6">
           <FormField label="Secure Password" htmlFor="password">
