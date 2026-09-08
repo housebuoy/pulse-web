@@ -14,12 +14,14 @@ import {
   Plus,
 } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit-badge";
 import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-dialog";
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
+import { MedicalRecordsSection } from "@/components/dashboard/patients/medical-records-section";
 import {
   usePatient,
   useRecordVitals,
@@ -52,7 +54,7 @@ export default function PatientFilePage() {
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-2xl space-y-6">
           {isLoading && !patient ? (
-            <p className="text-sm text-fg-muted">Loading…</p>
+            <DetailSkeleton lines={5} />
           ) : !patient ? (
             <p className="text-sm text-fg-muted">Patient not found.</p>
           ) : (
@@ -267,6 +269,9 @@ export default function PatientFilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* medical records (notes / prescriptions / labs) */}
+              <MedicalRecordsSection patientId={patient.id} />
 
               {/* visit history */}
               <div className="rounded-xl border border-border bg-surface p-5">

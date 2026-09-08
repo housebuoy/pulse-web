@@ -9,6 +9,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -19,7 +20,6 @@ import { useAuthState } from "@/hooks/use-workspace-session";
 import {
   DEMO_PASSWORD,
   finalizeLogin,
-  isDeviceTrusted,
   login,
   markDeviceTrusted,
   roleHome,
@@ -55,15 +55,31 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const result = await login({ email, password });
-      if (isDeviceTrusted()) {
+      // Dev-mode convenience: the backend echoes the verification code
+      // (otp.dev-mode=true) — surface it here so manual QA doesn't need
+      // DevTools/Render logs. Absent when the backend stops echoing.
+      if (result.devOtp) {
+        toast("Dev OTP", {
+          description: (
+            <span className="font-mono text-xl font-semibold tracking-[0.3em]">
+              {result.devOtp}
+            </span>
+          ),
+          duration: 15_000,
+        });
+      }
+      // 2FA (per-account /settings/2fa): if the backend returned a token
+      // directly the account does NOT require OTP — go straight in.
+      if (result.token) {
         finalizeLogin(result.token);
         router.replace(roleHome(result.session.role));
-      } else {
-        setPending(result);
-        setStep("otp");
+        return;
       }
-    } catch {
-      setError("Invalid email or password.");
+      // Otherwise this account requires the verification code.
+      setPending(result);
+      setStep("otp");
+    } catch (err) {
+      setError(backendMessage(err) ?? "Invalid email or password.");
     } finally {
       setSubmitting(false);
     }
@@ -73,15 +89,26 @@ export default function LoginPage() {
     e.preventDefault();
     if (code.length !== 6 || !pending) return;
     setSubmitting(true);
+    setError("");
     try {
-      await verifyLoginOtp(code);
+      const otp = await verifyLoginOtp(code, email);
       markDeviceTrusted();
-      finalizeLogin(pending.token);
+      finalizeLogin(otp?.token ?? pending.token);
       router.replace(roleHome(pending.session.role));
+    } catch (err) {
+      setError(backendMessage(err) ?? "Verification failed. Try again.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Surface the backend's ApiResponse message (e.g. "Invalid verification
+  // code. 4 attempts remaining.") instead of the generic axios error text.
+  const backendMessage = (err: unknown): string | null =>
+    typeof err === "object" && err !== null && "response" in err
+      ? ((err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message ?? null)
+      : null;
 
   // Already signed in and about to be redirected — don't flash the form.
   if (session) return null;

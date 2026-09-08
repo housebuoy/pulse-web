@@ -5,11 +5,26 @@
 // (hooks/use-workspace-session.ts, components/auth/require-role.tsx,
 // app/(auth)/login/page.tsx) unchanged.
 
+import { api } from "@/lib/axios";
 import type {
   LoginCredentials,
   SessionRole,
   WorkspaceSession,
 } from "@/lib/types/auth";
+
+// The swap flag shared by every other domain's lib/api/*.ts — mock is the
+// default; set NEXT_PUBLIC_USE_MOCK=false to hit the Spring Boot backend.
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+
+/** Backend POST /api/auth/login response shape (LoginResponse). */
+interface LoginResponse {
+  token: string | null;
+  role: string;
+  userId: number;
+  message: string;
+  session: WorkspaceSession;
+  devOtp?: string | null;
+}
 
 /** One activated doctor account so /w can be built and previewed immediately. */
 export const MOCK_DOCTOR_SESSION: WorkspaceSession = {
@@ -52,10 +67,26 @@ function delay<T>(value: T, ms = 250): Promise<T> {
 
 export interface LoginResult {
   session: WorkspaceSession;
-  token: string;
+  // null on the first login step — the real 2FA flow issues the token
+  // from verifyLoginOtp after the OTP is confirmed (lib/api/auth.ts).
+  token: string | null;
+  // Dev-mode only: the backend echoes the verification code (otp.dev-mode).
+  // Absent in prod — the UI shows it in a toast to speed up manual testing.
+  devOtp?: string | null;
 }
 
 export function login({ email, password }: LoginCredentials): Promise<LoginResult> {
+  if (!USE_MOCK) {
+    // Real backend (2FA): POST /api/auth/login validates credentials and
+    // issues a verification code; token comes from verifyLoginOtp.
+    return api
+      .post<LoginResponse>("/auth/login", { email, password })
+      .then(({ data }) => ({
+        session: data.session,
+        token: data.token ?? null,
+        devOtp: data.devOtp ?? null,
+      }));
+  }
   const session = ACCOUNTS.find(
     (a) => a.email.toLowerCase() === email.trim().toLowerCase(),
   );
@@ -65,12 +96,47 @@ export function login({ email, password }: LoginCredentials): Promise<LoginResul
   return delay({ session, token: `mock-session.${session.staffId}` });
 }
 
-// Second factor, only wired for new/unrecognized devices (see
-// isDeviceTrusted below) — mock: any 6-digit code passes, same convention
+/** Result of a successful OTP verification — the real session token. */
+export interface OtpVerifyResult {
+  // null when the backend response carries no token yet (callers fall back
+  // to the pending login token).
+  token: string | null;
+}
+
+// Second factor, wired for every login on an untrusted device (see
+// isDeviceTrusted below). Mock: any 6-digit code passes, same convention
 // as app/(auth)/activate/page.tsx.
-export function verifyLoginOtp(code: string): Promise<void> {
-  if (code.length !== 6) return Promise.reject(new Error("Enter all 6 digits."));
-  return delay(undefined, 200);
+// Real: POST /api/auth/login/verify-otp validates the code server-side and
+// returns the real JWT; the mock returns null so callers fall back to the
+// mock login token.
+export async function verifyLoginOtp(
+  code: string,
+  email?: string,
+): Promise<OtpVerifyResult | null> {
+  if (!USE_MOCK) {
+    const { data } = await api.post<LoginResponse>("/auth/login/verify-otp", {
+      email,
+      code,
+    });
+    return { token: data.token };
+  }
+  if (code.length !== 6) throw new Error("Enter all 6 digits.");
+  return delay(null, 200);
+}
+
+/**
+ * Resolves the full session for a stored token. Mock tokens decode locally;
+ * real JWTs are opaque to the frontend, so the session is fetched from
+ * GET /api/auth/me (token attached by the axios interceptor).
+ */
+export async function fetchSession(token: string): Promise<WorkspaceSession> {
+  if (USE_MOCK) {
+    const session = resolveSession(token);
+    if (!session) throw new Error("No session for token");
+    return session;
+  }
+  const { data } = await api.get<WorkspaceSession>("/auth/me");
+  return data;
 }
 
 // ---- Session storage ----
@@ -108,10 +174,16 @@ export function getStoredSession(): WorkspaceSession | null {
   return resolveSession(window.localStorage.getItem(TOKEN_KEY));
 }
 
+<<<<<<< HEAD
 /** Persists the token from a completed login (password, or password+OTP).
  *  Also stamps a 24h mock expiry — see SESSION_DURATION_MS above. */
 export function finalizeLogin(token: string): void {
   if (typeof window !== "undefined") {
+=======
+/** Persists the token from a completed login (password, or password+OTP). */
+export function finalizeLogin(token: string | null): void {
+  if (typeof window !== "undefined" && token) {
+>>>>>>> cb0425592e09afe2e923815458575920e066b75a
     window.localStorage.setItem(TOKEN_KEY, token);
     window.localStorage.setItem(
       TOKEN_EXPIRES_KEY,

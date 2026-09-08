@@ -1,10 +1,12 @@
 // Backend contract for staff. Spring Boot serializes to these shapes.
 
 // Doubles as the access role used by Settings → Team & Access (staff ARE the
-// users — there's no separate user/role list). "front-desk" and "read-only"
+// users — there's no separate user/role list). "front_desk" and "read_only"
 // only make sense as access levels, not clinical job titles, but living on
 // the same field keeps one source of truth instead of a parallel enum.
-export type StaffRole = "doctor" | "nurse" | "admin" | "front-desk" | "read-only";
+// Values match the Spring Boot StaffRole serialization (lowercased enum
+// names: FRONT_DESK → "front_desk"), NOT display labels — map via ROLE_LABEL.
+export type StaffRole = "doctor" | "nurse" | "admin" | "front_desk" | "read_only";
 
 export type DutyStatus = "on_duty" | "off_duty" | "on_leave";
 

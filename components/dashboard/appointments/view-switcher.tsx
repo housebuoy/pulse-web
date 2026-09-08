@@ -18,7 +18,9 @@ export function useAppointmentView(): [
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as AppointmentView | null;
-    if (stored && VALID.includes(stored)) setView(stored);
+    if (stored && VALID.includes(stored))
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView(stored);
   }, []);
 
   const set = (v: AppointmentView) => {

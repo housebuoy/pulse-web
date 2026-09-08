@@ -47,7 +47,7 @@ export function OperationalSection() {
   };
 
   if (isLoading || !operational) {
-    return <div className="h-96 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-96 shimmer rounded-xl bg-surface-muted" />;
   }
 
   return (

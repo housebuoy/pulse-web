@@ -25,6 +25,7 @@ import {
   useUnreadCount,
 } from "@/hooks/use-notifications";
 import type { NotificationType } from "@/lib/types/notifications";
+import { useAuthState } from "@/hooks/use-workspace-session";
 
 // ---- helpers ----------------------------------------------------------------
 
@@ -52,8 +53,14 @@ const TYPE_META: Record<
 
 export function NotificationsPanel() {
   const router = useRouter();
+  const { session } = useAuthState();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<"all" | "unread">("all");
+
+  // web#11: the full feed page lives in both workspaces — route doctors to
+  // /w/notifications, everyone else (/d is admin-only) to /d/notifications.
+  const allNotificationsHref =
+    session?.role === "doctor" ? "/w/notifications" : "/d/notifications";
 
   const { data: notifications = [], isLoading } = useNotifications();
   const { data: unreadCount = 0 } = useUnreadCount();
@@ -139,7 +146,7 @@ export function NotificationsPanel() {
           {isLoading ? (
             <div className="space-y-2 p-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-muted" />
+                <div key={i} className="h-12 shimmer rounded-lg bg-surface-muted" />
               ))}
             </div>
           ) : visible.length === 0 ? (
@@ -192,7 +199,7 @@ export function NotificationsPanel() {
             className="w-full justify-center text-xs"
           >
             <a
-              href="/d/notifications"
+              href={allNotificationsHref}
               onClick={() => setOpen(false)}
             >
               View all notifications

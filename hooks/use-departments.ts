@@ -16,13 +16,14 @@ const keys = {
   stats: () => [...keys.all, "stats"] as const,
 };
 
-export function useDepartments() {
+export function useDepartments(enabled = true) {
   return useQuery({
     queryKey: keys.list(),
     queryFn: () => departmentsApi.fetchDepartments(),
     // Live floor stats change, so poll on the same cadence as queue departments.
     refetchInterval: 10_000,
     placeholderData: (prev) => prev,
+    enabled,
   });
 }
 

@@ -36,7 +36,7 @@ export function ClinicalRecordDialog({
   onOpenChange: (open: boolean) => void;
   allergies: string[];
   medications: Medication[];
-  onSubmit: (values: { allergies: string[]; medications: Medication[] }) => void;
+  onSubmit: (values: { allergies: string[]; currentMedications: Medication[] }) => void;
   isSubmitting: boolean;
 }) {
   const { register, control, handleSubmit, reset } =
@@ -62,7 +62,9 @@ export function ClinicalRecordDialog({
         .split(",")
         .map((a) => a.trim())
         .filter(Boolean),
-      medications: values.medications
+      // The contract field is currentMedications (UpdateClinicalRecordInput)
+      // — submitting `medications` silently dropped the payload server-side.
+      currentMedications: values.medications
         .filter((m) => m.name.trim())
         .map((m) => ({
           name: m.name.trim(),

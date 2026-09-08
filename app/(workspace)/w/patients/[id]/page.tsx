@@ -10,14 +10,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Mail, MapPin, Pencil, Phone, Plus } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit-badge";
 import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-dialog";
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
+<<<<<<< HEAD
 import { RecordHistory } from "@/components/workspace/records/record-history";
 import { ConsultationRecordDialog } from "@/components/workspace/records/consultation-record-dialog";
+=======
+import { MedicalRecordsSection } from "@/components/dashboard/patients/medical-records-section";
+>>>>>>> cb0425592e09afe2e923815458575920e066b75a
 import {
   usePatient,
   useRecordVitals,
@@ -70,7 +75,7 @@ export default function WorkspacePatientFilePage() {
           </Link>
 
           {isLoading && !patient ? (
-            <p className="text-sm text-fg-muted">Loading…</p>
+            <DetailSkeleton lines={5} />
           ) : !patient ? (
             <p className="text-sm text-fg-muted">Patient not found.</p>
           ) : (
@@ -231,6 +236,7 @@ export default function WorkspacePatientFilePage() {
                 </div>
               </div>
 
+<<<<<<< HEAD
               {/* record history — read-only context before authoring. Same
                   data the patient reads on the mobile Records tab. */}
               <RecordHistory
@@ -252,6 +258,10 @@ export default function WorkspacePatientFilePage() {
                   ) : undefined
                 }
               />
+=======
+              {/* medical records (notes / prescriptions / labs) */}
+              <MedicalRecordsSection patientId={patient.id} />
+>>>>>>> cb0425592e09afe2e923815458575920e066b75a
 
               {/* current visit */}
               {patient.currentVisit && (

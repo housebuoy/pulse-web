@@ -18,7 +18,11 @@
 // tell "haven't checked yet" apart from "checked, no session," so they can
 // wait instead of acting on a default that's about to be corrected.
 import { useEffect, useState } from "react";
-import { getStoredSession, MOCK_DOCTOR_SESSION } from "@/lib/mock/auth";
+import {
+  fetchSession,
+  getStoredSession,
+  MOCK_DOCTOR_SESSION,
+} from "@/lib/mock/auth";
 import type { WorkspaceSession } from "@/lib/types/auth";
 
 export interface AuthState {
@@ -27,6 +31,11 @@ export interface AuthState {
    *  (components/auth/require-role.tsx) must wait for this before deciding
    *  whether to redirect — see the note above for why. */
   isResolved: boolean;
+}
+
+/** Mock tokens decode locally; real JWTs are opaque and resolve async. */
+function isMockToken(token: string | null): boolean {
+  return token !== null && token.startsWith("mock-session.");
 }
 
 export function useAuthState(): AuthState {
@@ -40,13 +49,42 @@ export function useAuthState(): AuthState {
     // SESSION_DURATION_MS in lib/mock/auth.ts) as no session and clears it,
     // so an expired token here behaves identically to never having logged in.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSession(getStoredSession());
-    setIsResolved(true);
+    const token =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("pulse_token")
+        : null;
+
+    if (isMockToken(token)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSession(getStoredSession());
+      setIsResolved(true);
+    } else if (token) {
+      // Real JWT — fetch the full session from GET /api/auth/me. Keep
+      // isResolved false until it lands so guards don't redirect on a
+      // placeholder "no session" render (see the file-level note).
+      let cancelled = false;
+      fetchSession(token)
+        .then((s) => {
+          if (!cancelled) setSession(s);
+        })
+        .catch(() => {
+          if (!cancelled) setSession(null);
+        })
+        .finally(() => {
+          if (!cancelled) setIsResolved(true);
+        });
+      return () => {
+        cancelled = true;
+      };
+    } else {
+      setIsResolved(true);
+    }
 
     // Stay in sync if another tab signs in/out.
     function onStorage(e: StorageEvent) {
       if (e.key === "pulse_token") {
         setSession(getStoredSession());
+        setIsResolved(true);
       }
     }
     window.addEventListener("storage", onStorage);

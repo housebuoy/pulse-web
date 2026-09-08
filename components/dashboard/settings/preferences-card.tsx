@@ -54,7 +54,7 @@ export function PreferencesCard() {
   };
 
   if (isLoading || !prefs) {
-    return <div className="h-40 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-40 shimmer rounded-xl bg-surface-muted" />;
   }
 
   return (

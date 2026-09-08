@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
 
           <ChartCard title="Patient volume">
             {isLoading && !data ? (
-              <div className="h-[260px] animate-pulse rounded-lg bg-surface-muted" />
+              <div className="h-[260px] shimmer rounded-lg bg-surface-muted" />
             ) : (
               <AnalyticsLineChart
                 data={data?.daily ?? []}
@@ -148,7 +148,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <ChartCard title="Wait time">
               {isLoading && !data ? (
-                <div className="h-[260px] animate-pulse rounded-lg bg-surface-muted" />
+                <div className="h-[260px] shimmer rounded-lg bg-surface-muted" />
               ) : (
                 <AnalyticsLineChart
                   data={data?.daily ?? []}
@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
 
             <ChartCard title="No-show rate">
               {isLoading && !data ? (
-                <div className="h-[260px] animate-pulse rounded-lg bg-surface-muted" />
+                <div className="h-[260px] shimmer rounded-lg bg-surface-muted" />
               ) : (
                 <AnalyticsLineChart
                   data={data?.daily ?? []}
@@ -178,7 +178,7 @@ export default function AnalyticsPage() {
 
           <ChartCard title="Appointments by status">
             {isLoading && !data ? (
-              <div className="h-[140px] animate-pulse rounded-lg bg-surface-muted" />
+              <div className="h-[140px] shimmer rounded-lg bg-surface-muted" />
             ) : (
               <StatusBreakdown data={data?.appointmentsByStatus ?? []} />
             )}
@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
               Department comparison
             </h2>
             {isLoading && !data ? (
-              <div className="h-[220px] animate-pulse rounded-2xl bg-surface-muted" />
+              <div className="h-[220px] shimmer rounded-2xl bg-surface-muted" />
             ) : (
               <DepartmentComparisonTable
                 departments={data?.departments ?? []}

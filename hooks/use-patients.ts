@@ -16,13 +16,14 @@ const keys = {
   list: () => [...keys.all, "list"] as const,
 };
 
-export function usePatients() {
+export function usePatients(enabled = true) {
   return useQuery({
     queryKey: keys.list(),
     queryFn: () => patientsApi.fetchPatients(),
     // "Currently here" is meant to feel live, same cadence as the live queue.
     refetchInterval: 15_000,
     placeholderData: (prev) => prev,
+    enabled,
   });
 }
 

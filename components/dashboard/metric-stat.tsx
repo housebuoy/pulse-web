@@ -9,9 +9,16 @@ export function MetricStat({
 }) {
   return (
     <div className="flex flex-col">
-      <span className="text-2xl font-bold tracking-tight tabular-nums text-fg">
-        {isLoading ? "—" : value}
-      </span>
+      {isLoading ? (
+        <span
+          aria-hidden
+          className="h-7 w-16 shimmer rounded bg-surface-muted"
+        />
+      ) : (
+        <span className="text-2xl font-bold tracking-tight tabular-nums text-fg">
+          {value}
+        </span>
+      )}
       <span className="text-xs text-fg-muted">{label}</span>
     </div>
   );

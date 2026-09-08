@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DepartmentForm } from "@/components/dashboard/departments/department-form";
+import { DetailSkeleton } from "@/components/ui/detail-skeleton";
 import { useDepartment, useUpdateDepartment } from "@/hooks/use-departments";
 
 export default function EditDepartmentPage() {
@@ -21,7 +22,7 @@ export default function EditDepartmentPage() {
         <div className="mx-auto max-w-2xl space-y-6 p-6">
           <div className="rounded-xl border border-border bg-surface p-6">
             {isLoading && !department ? (
-              <p className="text-sm text-fg-muted">Loading…</p>
+              <DetailSkeleton lines={5} />
             ) : !department ? (
               <p className="text-sm text-fg-muted">Department not found.</p>
             ) : (

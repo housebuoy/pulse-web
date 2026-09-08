@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
 // import { ReactQueryDevtools } from "@tanstack/react-query-devtools"; // optional
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -14,6 +15,15 @@ export function Providers({ children }: { children: ReactNode }) {
           queries: {
             staleTime: 30_000,
             refetchOnWindowFocus: false,
+            // Fail fast on 4xx — retrying a 404 just saturates the browser's
+            // connection pool and queues the real queries behind the storm.
+            // Only network failures and 5xx get a couple of retries.
+            retry: (failureCount, error) => {
+              const status = (error as { response?: { status?: number } })
+                ?.response?.status;
+              if (status !== undefined && status < 500) return false;
+              return failureCount < 2;
+            },
           },
         },
       }),
@@ -21,6 +31,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" richColors closeButton duration={15_000} />
       {children}
       {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>

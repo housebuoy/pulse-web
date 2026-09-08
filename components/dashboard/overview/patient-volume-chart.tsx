@@ -22,7 +22,7 @@ export function PatientVolumeChart() {
       <h2 className="mb-5 text-base font-bold text-fg">Patient Volume Today</h2>
 
       {isLoading ? (
-        <div className="h-[260px] animate-pulse rounded-lg bg-surface-muted" />
+        <div className="h-[260px] shimmer rounded-lg bg-surface-muted" />
       ) : (
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={data} barCategoryGap="30%">

@@ -51,7 +51,7 @@ export function SessionsCard() {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-14 animate-pulse rounded-lg bg-surface-muted" />
+            <div key={i} className="h-14 shimmer rounded-lg bg-surface-muted" />
           ))}
         </div>
       ) : (

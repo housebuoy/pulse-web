@@ -176,3 +176,37 @@
     font-size: 90%;   /* ← the whole UI now renders at 90% density */
   }
 }
+/* Shimmer loading skeletons — shared sweep effect for every section's
+   loading state (replaces the old flat animate-pulse blocks). */
+@layer utilities {
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-surface-muted, #f3f4f6);
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 80%
+    );
+    animation: shimmer-sweep 1.6s infinite;
+  }
+}
+
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after {
+    animation: none;
+  }
+}

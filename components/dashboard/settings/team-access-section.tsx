@@ -98,7 +98,7 @@ export function TeamAccessSection() {
         {isLoading && staff.length === 0 ? (
           <div className="space-y-px p-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-muted" />
+              <div key={i} className="h-12 shimmer rounded-lg bg-surface-muted" />
             ))}
           </div>
         ) : (

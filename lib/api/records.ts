@@ -1,71 +1,111 @@
-// Swap point. USE_MOCK true → resolves from lib/mock/records.
-// Flip the flag and the same functions hit Spring Boot. Hooks/components don't move.
-//
-// The read below is the STAFF-SCOPED counterpart of the patient-side
-// GET /api/patients/me/records that already backs the mobile Records tab —
-// same data, addressed by patient id and authorized as staff.
 
-import { api } from "@/lib/axios";
-import * as mock from "@/lib/mock/records";
-import type {
-  CreatePrescriptionsInput,
-  CreateVisitRecordInput,
-  PrescriptionRecord,
-  PatientRecords,
-  RecordAuthor,
-  VisitRecord,
-} from "@/lib/types/records";
+export type RecordAuthorRole = "doctor" | "lab";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-export async function fetchPatientRecords(
-  patientId: string
-): Promise<PatientRecords> {
-  if (USE_MOCK) return mock.listPatientRecords(patientId);
-  const { data } = await api.get<PatientRecords>(
-    `/patients/${patientId}/records`
-  );
-  return data;
+export interface RecordAuthor {
+  staffId: string;
+  name: string;
+  role: RecordAuthorRole;
 }
 
-/**
- * Author a consultation record. Staff-side WRITE counterpart of the
- * patient-side read above — BACKEND-PENDING (psam-717): the real route
- * POST /patients/{id}/visits does not exist yet, so this resolves from the
- * mock today and needs no component change when it lands.
- *
- * `author` is passed only so the mock can stamp what the real server stamps
- * from the caller's JWT. It is deliberately NOT part of the request body.
- */
-export async function createVisitRecord(
-  input: CreateVisitRecordInput,
-  author: RecordAuthor
-): Promise<VisitRecord> {
-  if (USE_MOCK) return mock.createVisitRecord(input, author);
-  const { patientId, ...body } = input;
-  const { data } = await api.post<VisitRecord>(
-    `/patients/${patientId}/visits`,
-    body
-  );
-  return data;
+
+export interface VisitContext {
+  visitId?: string;
+  departmentId: string;
+  departmentName: string;
+  startedAt?: string;
 }
 
-/**
- * Author prescriptions attached to a consultation record. Staff-side WRITE
- * counterpart of the patient-side read — BACKEND-PENDING (psam-717): the real
- * route POST /patients/{id}/prescriptions does not exist yet.
- *
- * Same author convention as createVisitRecord: server-stamped, never sent.
- */
-export async function createPrescriptions(
-  input: CreatePrescriptionsInput,
-  author: RecordAuthor
-): Promise<PrescriptionRecord[]> {
-  if (USE_MOCK) return mock.createPrescriptions(input, author);
-  const { patientId, ...body } = input;
-  const { data } = await api.post<PrescriptionRecord[]>(
-    `/patients/${patientId}/prescriptions`,
-    body
-  );
-  return data;
+
+export interface VisitRecord {
+  id: string;
+  patientId: string;
+  visit: VisitContext;
+  author: RecordAuthor;
+  recordedAt: string;
+
+  presentingComplaint: string;
+  examination: string;
+  diagnosis: string;
+  plan: string;
+  summary: string;
+}
+
+export interface PrescriptionRecord {
+  id: string;
+  patientId: string;
+  visitRecordId: string;
+  author: RecordAuthor;
+  prescribedAt: string;
+
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+export interface LabResultValue {
+  label: string;
+  value: string;
+  referenceRange?: string;
+}
+
+export interface LabResultRecord {
+  id: string;
+  patientId: string;
+  visitRecordId?: string;
+  author: RecordAuthor;
+  reportedAt: string;
+
+  testName: string;
+  specimen?: string;
+  values: LabResultValue[];
+  notes?: string;
+}
+
+export interface PatientRecords {
+  visits: VisitRecord[];
+  prescriptions: PrescriptionRecord[];
+  labResults: LabResultRecord[];
+}
+
+
+export interface CreateVisitRecordInput {
+  patientId: string;
+  visit: VisitContext;
+
+  presentingComplaint: string;
+  examination: string;
+  diagnosis: string;
+  plan: string;
+  summary: string;
+}
+
+
+export interface PrescriptionDraft {
+  medication: string;
+  dose: string;
+  frequency: string;
+  duration: string;
+  instructions?: string;
+}
+
+export interface CreatePrescriptionsInput {
+  patientId: string;
+  visitRecordId: string;
+  prescriptions: PrescriptionDraft[];
+}
+
+
+export interface AddVisitNoteInput {
+  patientId: string;
+  summary: string;
+  visitDate?: string; 
+}
+
+export interface AddPrescriptionInput {
+  patientId: string;
+  medication: string;
+  dose: string;
+  prescribedDate?: string; 
 }
