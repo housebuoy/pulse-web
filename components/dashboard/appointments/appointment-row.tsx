@@ -14,14 +14,17 @@ import type {
 export function AppointmentRow({
   appointment,
   onAction,
+  onMarkPaid,
   isMutating,
 }: {
   appointment: Appointment;
   onAction: (id: string, next: AppointmentStatus) => void;
+  onMarkPaid?: (id: string) => void;
   isMutating: boolean;
 }) {
   const actions = actionsFor(appointment.status);
   const isEmergency = appointment.priority === "emergency";
+  const isPaid = appointment.paymentStatus === "paid";
 
   return (
     <div className="grid grid-cols-12 items-center gap-4 px-5 py-4">
@@ -72,15 +75,37 @@ export function AppointmentRow({
           />
         )}
         <AppointmentStatusBadge status={appointment.status} />
+        {appointment.paymentStatus && (
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[10px] font-bold uppercase leading-none",
+              isPaid
+                ? "bg-brand/10 text-brand"
+                : "bg-warning/10 text-warning",
+            )}
+          >
+            {isPaid ? "Paid" : "Unpaid"}
+          </span>
+        )}
       </div>
 
       {/* Actions */}
       <div
         className={cn(
           "col-span-8 flex items-center justify-end gap-2 lg:col-span-2",
-          actions.length === 0 && "opacity-0 pointer-events-none"
+          actions.length === 0 && !(onMarkPaid && !isPaid) && "opacity-0 pointer-events-none"
         )}
       >
+        {onMarkPaid && !isPaid && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isMutating}
+            onClick={() => onMarkPaid(appointment.id)}
+          >
+            Mark paid
+          </Button>
+        )}
         {actions.map((action) => (
           <Button
             key={action.key}
