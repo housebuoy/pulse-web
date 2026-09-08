@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AppointmentDateNav } from "@/components/dashboard/appointments/appointment-date-nav";
@@ -33,25 +33,41 @@ function AppointmentsBody() {
 
   // Server-scoped to this clinician via the stable staffId (email-linked to
   // the legacy doctor) — a profile rename never orphans the schedule.
-  const { data: mine = [], isLoading } = useAppointments({
+  const listQuery = useAppointments({
     date,
     staffId: session.staffId,
   });
+  const mine = listQuery.data ?? [];
 
   // Week / month: range fetch scoped to this doctor.
   const weekRange = useMemo(() => getWeekRange(date), [date]);
   const monthRange = useMemo(() => getMonthRange(date), [date]);
 
-  const { data: weekMine = [], isLoading: weekLoading } = useAppointmentsRange(
-    weekRange.from,
-    weekRange.to,
-    { staffId: session.staffId },
-  );
-  const { data: monthMine = [], isLoading: monthLoading } = useAppointmentsRange(
-    monthRange.from,
-    monthRange.to,
-    { staffId: session.staffId },
-  );
+  const weekQuery = useAppointmentsRange(weekRange.from, weekRange.to, {
+    staffId: session.staffId,
+  });
+  const monthQuery = useAppointmentsRange(monthRange.from, monthRange.to, {
+    staffId: session.staffId,
+  });
+  const weekMine = weekQuery.data ?? [];
+  const monthMine = monthQuery.data ?? [];
+  const weekLoading = weekQuery.isLoading;
+  const monthLoading = monthQuery.isLoading;
+
+  // Latch — empty views must not flash from stale cache while a remount
+  // refetch is in flight; shimmer instead until the queries settle (same
+  // pattern as My Patients / My Queue).
+  const [dataSettled, setDataSettled] = useState(false);
+  const resolving =
+    listQuery.isPending || weekQuery.isPending || monthQuery.isPending;
+  const fetching =
+    listQuery.isFetching || weekQuery.isFetching || monthQuery.isFetching;
+  useEffect(() => {
+    if (resolving || fetching) return;
+    const t = setTimeout(() => setDataSettled(true), 250);
+    return () => clearTimeout(t);
+  }, [resolving, fetching]);
+  const isLoading = listQuery.isLoading;
 
   const handleAction = (id: string, next: AppointmentStatus) =>
     update.mutate({ id, status: next });
@@ -79,13 +95,13 @@ function AppointmentsBody() {
             { label: "Completed", value: completed },
             { label: "No-show", value: noShow },
           ]}
-          isLoading={isLoading}
+          isLoading={isLoading || (!dataSettled && mine.length === 0)}
         />
 
         {view === "list" && (
           <AppointmentList
             appointments={mine}
-            isLoading={isLoading}
+            isLoading={isLoading || (!dataSettled && mine.length === 0)}
             isMutating={update.isPending}
             onAction={handleAction}
           />
@@ -95,7 +111,7 @@ function AppointmentsBody() {
           <WeekView
             appointments={weekMine}
             date={date}
-            isLoading={weekLoading}
+            isLoading={weekLoading || (!dataSettled && weekMine.length === 0)}
             isMutating={update.isPending}
             onAction={handleAction}
           />
