@@ -63,6 +63,9 @@ export function useAppointmentsRange(
   return useQuery({
     queryKey: [...keys.all, "range", from, to, staffId ?? null] as const,
     queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to, staffId),
+    // Same light-polling policy as useAppointments: external events (patient
+    // pays via Aza, walk-in check-in) must surface without a manual refresh.
+    refetchInterval: 30_000,
     placeholderData: (prev) => prev,
     enabled,
   });
