@@ -23,6 +23,9 @@ export interface QueueEntry {
   checkInAt: string; // ISO — when they joined the queue
   calledAt?: string | null; // ISO — when moved into consultation
   clinician?: string | null;
+  /** Stable staff id of the clinician — the identity join key. Match on this,
+   *  never the mutable clinician display name. */
+  clinicianId?: string | null;
   room?: string | null;
 }
 
