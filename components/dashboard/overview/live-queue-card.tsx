@@ -44,10 +44,10 @@ export function LiveQueueCard() {
               key={i}
               className="grid grid-cols-[1fr_150px_70px_80px] gap-3 border-b border-border px-5 py-3.5 last:border-0"
             >
-              <div className="h-4 w-32 animate-pulse rounded bg-surface-muted" />
-              <div className="h-4 w-24 animate-pulse rounded bg-surface-muted" />
-              <div className="ml-auto h-4 w-6 animate-pulse rounded bg-surface-muted" />
-              <div className="ml-auto h-4 w-10 animate-pulse rounded bg-surface-muted" />
+              <div className="h-4 w-32 shimmer rounded bg-surface-muted" />
+              <div className="h-4 w-24 shimmer rounded bg-surface-muted" />
+              <div className="ml-auto h-4 w-6 shimmer rounded bg-surface-muted" />
+              <div className="ml-auto h-4 w-10 shimmer rounded bg-surface-muted" />
             </div>
           ))
         : rows.map((row) => (

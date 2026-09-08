@@ -73,7 +73,7 @@ export function NotificationPreferencesCard() {
   };
 
   if (isLoading || !profile) {
-    return <div className="h-48 animate-pulse rounded-xl bg-surface-muted" />;
+    return <div className="h-48 shimmer rounded-xl bg-surface-muted" />;
   }
 
   return (

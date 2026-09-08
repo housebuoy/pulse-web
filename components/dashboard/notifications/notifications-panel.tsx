@@ -139,7 +139,7 @@ export function NotificationsPanel() {
           {isLoading ? (
             <div className="space-y-2 p-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-12 animate-pulse rounded-lg bg-surface-muted" />
+                <div key={i} className="h-12 shimmer rounded-lg bg-surface-muted" />
               ))}
             </div>
           ) : visible.length === 0 ? (

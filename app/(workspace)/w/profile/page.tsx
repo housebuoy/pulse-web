@@ -73,7 +73,7 @@ export default function WorkspaceProfilePage() {
         <DashboardHeader title="Profile" />
         <div className="flex-1 p-8">
           <div className="mx-auto w-full max-w-3xl">
-            <div className="h-80 animate-pulse rounded-xl bg-surface-muted" />
+            <div className="h-80 shimmer rounded-xl bg-surface-muted" />
           </div>
         </div>
       </div>

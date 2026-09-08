@@ -87,7 +87,7 @@ export default function NotificationsPage() {
             {isLoading && notifications.length === 0 ? (
               <div className="space-y-px p-4">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-14 animate-pulse rounded-lg bg-surface-muted" />
+                  <div key={i} className="h-14 shimmer rounded-lg bg-surface-muted" />
                 ))}
               </div>
             ) : notifications.length === 0 ? (

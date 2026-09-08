@@ -90,7 +90,7 @@ export function WeekView({
                     Array.from({ length: 3 }).map((_, j) => (
                       <div
                         key={j}
-                        className="h-5 w-full animate-pulse rounded bg-surface-muted"
+                        className="h-5 w-full shimmer rounded bg-surface-muted"
                       />
                     ))}
                 </div>

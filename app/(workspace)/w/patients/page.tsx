@@ -59,10 +59,10 @@ export default function WorkspacePatientsPage() {
             <div className="divide-y divide-border">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4">
-                  <div className="col-span-4 h-4 w-32 animate-pulse rounded bg-surface-muted" />
-                  <div className="col-span-2 h-4 w-20 animate-pulse rounded bg-surface-muted" />
-                  <div className="col-span-3 h-4 w-24 animate-pulse rounded bg-surface-muted" />
-                  <div className="col-span-3 ml-auto h-5 w-28 animate-pulse rounded-full bg-surface-muted" />
+                  <div className="col-span-4 h-4 w-32 shimmer rounded bg-surface-muted" />
+                  <div className="col-span-2 h-4 w-20 shimmer rounded bg-surface-muted" />
+                  <div className="col-span-3 h-4 w-24 shimmer rounded bg-surface-muted" />
+                  <div className="col-span-3 ml-auto h-5 w-28 shimmer rounded-full bg-surface-muted" />
                 </div>
               ))}
             </div>

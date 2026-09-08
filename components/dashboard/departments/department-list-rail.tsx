@@ -72,7 +72,7 @@ export function DepartmentListRail({
         {isLoading && departments.length === 0 ? (
           <div className="space-y-px p-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-11 animate-pulse rounded bg-surface-muted" />
+              <div key={i} className="h-11 shimmer rounded bg-surface-muted" />
             ))}
           </div>
         ) : departments.length === 0 ? (

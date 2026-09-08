@@ -39,9 +39,9 @@ export function QueueList({
         <div className="space-y-px">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-5 py-4">
-              <div className="h-5 w-14 animate-pulse rounded bg-surface-muted" />
-              <div className="h-5 flex-1 animate-pulse rounded bg-surface-muted" />
-              <div className="h-5 w-20 animate-pulse rounded bg-surface-muted" />
+              <div className="h-5 w-14 shimmer rounded bg-surface-muted" />
+              <div className="h-5 flex-1 shimmer rounded bg-surface-muted" />
+              <div className="h-5 w-20 shimmer rounded bg-surface-muted" />
             </div>
           ))}
         </div>

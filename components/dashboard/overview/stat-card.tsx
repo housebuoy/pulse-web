@@ -30,9 +30,9 @@ export function StatCard({
 export function StatCardSkeleton() {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
-      <div className="h-2.5 w-24 animate-pulse rounded bg-surface-muted" />
-      <div className="h-5 w-16 animate-pulse rounded bg-surface-muted" />
-      <div className="h-4 w-14 animate-pulse rounded-full bg-surface-muted" />
+      <div className="h-2.5 w-24 shimmer rounded bg-surface-muted" />
+      <div className="h-5 w-16 shimmer rounded bg-surface-muted" />
+      <div className="h-4 w-14 shimmer rounded-full bg-surface-muted" />
     </div>
   );
 }

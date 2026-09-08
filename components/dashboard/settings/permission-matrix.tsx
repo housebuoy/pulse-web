@@ -51,7 +51,7 @@ export function PermissionMatrix() {
       </div>
 
       {isLoading ? (
-        <div className="h-64 animate-pulse rounded-lg bg-surface-muted" />
+        <div className="h-64 shimmer rounded-lg bg-surface-muted" />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
