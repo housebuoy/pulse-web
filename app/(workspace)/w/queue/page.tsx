@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
@@ -29,16 +29,29 @@ export default function WorkspaceQueuePage() {
 
   // Queue — scoped to the doctor's department; all entries fetched once.
   const { data: departments = [] } = useQueueDepartments();
-  const { data: allEntries = [], isLoading } = useQueueEntries(
-    session.departmentId,
-  );
+  const entriesQuery = useQueueEntries(session.departmentId);
+  const allEntries = entriesQuery.data ?? [];
 
   // Today's appointments for the "My Day" stat bar — server-scoped to this
   // clinician via staffId (stable identity; renames don't orphan the list).
-  const { data: myAppts = [] } = useAppointments({
+  const myApptsQuery = useAppointments({
     date: today,
     staffId: session.staffId,
   });
+  const myAppts = myApptsQuery.data ?? [];
+
+  // Latch — empty states (Now Serving / waiting list) must not flash from
+  // stale cache while a remount refetch is in flight; shimmer instead until
+  // both queries have been idle for a beat (see My Patients page, same bug).
+  const [dataSettled, setDataSettled] = useState(false);
+  const resolving = entriesQuery.isPending || myApptsQuery.isPending;
+  const fetching = entriesQuery.isFetching || myApptsQuery.isFetching;
+  useEffect(() => {
+    if (resolving || fetching) return;
+    const t = setTimeout(() => setDataSettled(true), 250);
+    return () => clearTimeout(t);
+  }, [resolving, fetching]);
+  const isLoading = entriesQuery.isLoading;
   const seen = myAppts.filter((a) => a.status === "completed").length;
 
   const callNext = useCallNext();
@@ -134,6 +147,7 @@ export default function WorkspaceQueuePage() {
             }
             isCalling={callNext.isPending}
             isUpdating={updateStatus.isPending}
+            isLoading={isLoading || (!dataSettled && serving.length === 0)}
           />
 
           {/* Department waiting list — all patients the doctor can call next */}
@@ -145,7 +159,7 @@ export default function WorkspaceQueuePage() {
             onSkip={(entry) =>
               updateStatus.mutate({ entryId: entry.id, status: "skipped" })
             }
-            isLoading={isLoading}
+            isLoading={isLoading || (!dataSettled && waiting.length === 0)}
             isMutating={isMutating}
           />
         </div>
