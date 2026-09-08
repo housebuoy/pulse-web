@@ -16,8 +16,8 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
   doctor: "Doctor",
   nurse: "Nurse",
   admin: "Admin",
-  "front-desk": "Front Desk",
-  "read-only": "Read-only",
+  front_desk: "Front Desk",
+  read_only: "Read-only",
 };
 
 export const ACCOUNT_STATUS_META: Record<
