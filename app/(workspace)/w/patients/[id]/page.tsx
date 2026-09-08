@@ -17,22 +17,13 @@ import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit
 import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-dialog";
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
-import { RecordHistory } from "@/components/workspace/records/record-history";
-import { ConsultationRecordDialog } from "@/components/workspace/records/consultation-record-dialog";
 import { MedicalRecordsSection } from "@/components/dashboard/patients/medical-records-section";
-
 import {
   usePatient,
   useRecordVitals,
   useUpdateClinicalRecord,
   useUpdatePatient,
 } from "@/hooks/use-patients";
-import {
-  PrescriptionsFailedError,
-  useCanAuthorRecords,
-  useSaveConsultation,
-} from "@/hooks/use-records";
-import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import {
   GENDER_LABEL,
   VISIT_STATUS_LABEL,
@@ -43,20 +34,14 @@ import { formatJoined, formatShortDate, formatTime } from "@/lib/format";
 
 export default function WorkspacePatientFilePage() {
   const { id } = useParams<{ id: string }>();
-  const session = useWorkspaceSession();
   const { data: patient, isLoading } = usePatient(id);
   const updatePatient = useUpdatePatient();
   const updateClinicalRecord = useUpdateClinicalRecord();
   const recordVitals = useRecordVitals();
-  // Authoring is doctor-only. /w is already doctor-gated by its layout; this
-  // is the per-action check, and the write layer rejects non-doctors too.
-  const canAuthorRecords = useCanAuthorRecords();
-  const saveConsultation = useSaveConsultation();
 
   const [editOpen, setEditOpen] = useState(false);
   const [clinicalOpen, setClinicalOpen] = useState(false);
   const [vitalsOpen, setVitalsOpen] = useState(false);
-  const [consultationOpen, setConsultationOpen] = useState(false);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -234,27 +219,6 @@ export default function WorkspacePatientFilePage() {
                 </div>
               </div>
 
-              {/* record history — read-only context before authoring. Same
-                  data the patient reads on the mobile Records tab. */}
-              <RecordHistory
-                patientId={patient.id}
-                action={
-                  canAuthorRecords ? (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        // Drop any record carried over from a previous
-                        // partial save before starting a new consultation.
-                        saveConsultation.startOver();
-                        setConsultationOpen(true);
-                      }}
-                    >
-                      <Plus className="size-4" />
-                      Record consultation
-                    </Button>
-                  ) : undefined
-                }
-              />
               {/* medical records (notes / prescriptions / labs) */}
               <MedicalRecordsSection patientId={patient.id} />
 
@@ -312,45 +276,6 @@ export default function WorkspacePatientFilePage() {
               )
             }
           />
-          {canAuthorRecords && (
-            <ConsultationRecordDialog
-              open={consultationOpen}
-              onOpenChange={setConsultationOpen}
-              patientName={patient.name}
-              contextLabel={
-                patient.currentVisit
-                  ? `${patient.currentVisit.departmentName} · in since ${formatTime(
-                      patient.currentVisit.since,
-                    )}`
-                  : "No open visit — recorded against today"
-              }
-              isSubmitting={saveConsultation.isPending}
-              error={
-                !saveConsultation.isError
-                  ? undefined
-                  : saveConsultation.error instanceof PrescriptionsFailedError
-                    ? "The consultation was saved. Its prescriptions were not — saving again adds them to that same record, it won’t file a second consultation."
-                    : "Could not save this record. Nothing was stored — try again."
-              }
-              onSubmit={(values) =>
-                saveConsultation.mutate(
-                  {
-                    patientId: patient.id,
-                    visit: {
-                      departmentId:
-                        patient.currentVisit?.departmentId ?? session.departmentId,
-                      departmentName:
-                        patient.currentVisit?.departmentName ??
-                        session.departmentName,
-                      startedAt: patient.currentVisit?.since,
-                    },
-                    ...values,
-                  },
-                  { onSuccess: () => setConsultationOpen(false) },
-                )
-              }
-            />
-          )}
           <VitalsDialog
             open={vitalsOpen}
             onOpenChange={setVitalsOpen}
