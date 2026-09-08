@@ -8,6 +8,7 @@ import { AppointmentList } from "@/components/dashboard/appointments/appointment
 import { StatBar } from "@/components/dashboard/shared/stat-bar";
 import { WeekView } from "@/components/dashboard/appointments/week-view";
 import { MonthView } from "@/components/dashboard/appointments/month-view";
+import { UpcomingList } from "@/components/dashboard/appointments/upcoming-list";
 import {
   ViewSwitcher,
   useAppointmentView,
@@ -16,6 +17,7 @@ import {
   useAppointments,
   useAppointmentsRange,
   useUpdateAppointment,
+  useUpdatePayment,
 } from "@/hooks/use-appointments";
 import { useWorkspaceSession } from "@/hooks/use-workspace-session";
 import { toDateKey } from "@/lib/appointment-utils";
@@ -30,6 +32,10 @@ function AppointmentsBody() {
   );
   const [view, setView] = useAppointmentView();
   const update = useUpdateAppointment();
+  const updatePayment = useUpdatePayment();
+  const isMutating = update.isPending || updatePayment.isPending;
+  const handleMarkPaid = (id: string) =>
+    updatePayment.mutate({ id, paymentStatus: "paid" });
 
   // Server-scoped to this clinician via the stable staffId (email-linked to
   // the legacy doctor) — a profile rename never orphans the schedule.
@@ -53,6 +59,25 @@ function AppointmentsBody() {
   const monthMine = monthQuery.data ?? [];
   const weekLoading = weekQuery.isLoading;
   const monthLoading = monthQuery.isLoading;
+
+  // Upcoming (default): this clinician's future bookings for a rolling year.
+  const upcomingFrom = toDateKey(new Date());
+  const upcomingTo = useMemo(
+    () =>
+      new Date(Date.now() + 365 * 86_400_000).toISOString().slice(0, 10),
+    [],
+  );
+  const upcomingQuery = useAppointmentsRange(upcomingFrom, upcomingTo, {
+    staffId: session.staffId,
+    enabled: view === "upcoming",
+  });
+  const upcomingMine = useMemo(
+    () =>
+      (upcomingQuery.data ?? []).filter((a) =>
+        ["scheduled", "confirmed", "checked_in"].includes(a.status),
+      ),
+    [upcomingQuery.data],
+  );
 
   // Latch — empty views must not flash from stale cache while a remount
   // refetch is in flight; shimmer instead until the queries settle (same
@@ -82,8 +107,17 @@ function AppointmentsBody() {
     <div className="flex-1 overflow-y-auto p-6">
       <div className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <AppointmentDateNav date={date} onChange={setDate} view={view} />
-          <ViewSwitcher view={view} onChange={setView} />
+          {view !== "upcoming" && (
+            <AppointmentDateNav date={date} onChange={setDate} view={view} />
+          )}
+          <div className="ml-auto flex items-center gap-3">
+            {view === "upcoming" && (
+              <p className="text-sm text-fg-muted">
+                Your future bookings · next 12 months
+              </p>
+            )}
+            <ViewSwitcher view={view} onChange={setView} />
+          </div>
         </div>
 
         <StatBar
@@ -98,12 +132,23 @@ function AppointmentsBody() {
           isLoading={isLoading || (!dataSettled && mine.length === 0)}
         />
 
+        {view === "upcoming" && (
+          <UpcomingList
+            appointments={upcomingMine}
+            isLoading={upcomingQuery.isLoading}
+            isMutating={isMutating}
+            onAction={handleAction}
+            onMarkPaid={handleMarkPaid}
+          />
+        )}
+
         {view === "list" && (
           <AppointmentList
             appointments={mine}
             isLoading={isLoading || (!dataSettled && mine.length === 0)}
-            isMutating={update.isPending}
+            isMutating={isMutating}
             onAction={handleAction}
+            onMarkPaid={handleMarkPaid}
           />
         )}
 

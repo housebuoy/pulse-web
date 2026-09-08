@@ -8,6 +8,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,6 @@ import { ResendTimer } from "@/components/onboarding/resend-timer";
 import { FormField } from "@/components/onboarding/form-field";
 import { useAuthState } from "@/hooks/use-workspace-session";
 import {
-  DEMO_PASSWORD,
   finalizeLogin,
   login,
   markDeviceTrusted,
@@ -184,6 +184,15 @@ export default function LoginPage() {
           />
         </FormField>
 
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-body-sm text-brand hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
+
         <Button
           type="submit"
           disabled={!email || !password || submitting}
@@ -192,16 +201,6 @@ export default function LoginPage() {
           {submitting ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-
-      <div className="mt-8 rounded-lg border border-dashed border-border p-4 text-body-sm text-fg-muted">
-        <p className="font-medium text-fg-secondary">Demo accounts (mock only)</p>
-        <p className="mt-1">Admin — sarah.jenkins@knust-hospital.test</p>
-        <p>Doctor — owusu@pulsehealth.test</p>
-        <p className="mt-1">
-          Password —{" "}
-          <span className="font-mono text-fg-secondary">{DEMO_PASSWORD}</span>
-        </p>
-      </div>
     </div>
   );
 }

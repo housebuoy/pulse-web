@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, CalendarRange, LayoutList } from "lucide-react";
+import { CalendarClock, CalendarDays, CalendarRange, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type AppointmentView = "list" | "week" | "month";
+export type AppointmentView = "upcoming" | "list" | "week" | "month";
 
 const STORAGE_KEY = "pulse_apt_view";
-const VALID: AppointmentView[] = ["list", "week", "month"];
+const VALID: AppointmentView[] = ["upcoming", "list", "week", "month"];
 
-/** Persists the selected view to localStorage across sessions. Defaults to "list". */
+/** Persists the selected view across sessions. Defaults to "upcoming" so all
+ *  future bookings are visible without picking a date. */
 export function useAppointmentView(): [
   AppointmentView,
   (v: AppointmentView) => void,
 ] {
-  const [view, setView] = useState<AppointmentView>("list");
+  const [view, setView] = useState<AppointmentView>("upcoming");
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as AppointmentView | null;
@@ -32,7 +33,8 @@ export function useAppointmentView(): [
 }
 
 const OPTIONS = [
-  { value: "list" as const, icon: LayoutList, label: "List" },
+  { value: "upcoming" as const, icon: CalendarClock, label: "Upcoming" },
+  { value: "list" as const, icon: LayoutList, label: "Day" },
   { value: "week" as const, icon: CalendarDays, label: "Week" },
   { value: "month" as const, icon: CalendarRange, label: "Month" },
 ];

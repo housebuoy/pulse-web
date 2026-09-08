@@ -213,3 +213,113 @@ export function markDeviceTrusted(): void {
 export function roleHome(role: SessionRole): string {
   return role === "admin" ? "/d/overview" : "/w/queue";
 }
+
+// ---- Password reset (facility staff, email-based) ----
+//
+// Staff-scoped and EMAIL-based on purpose: the patient (mobile) app resets
+// against a phone number + SMS code, and that flow does not share these
+// endpoints. This is also NOT the logged-in change-password path
+// (lib/api/settings.ts changePassword) — no session exists here, so the
+// second step issues a short-lived reset token that stands in for one.
+//
+// Three steps, mirroring the login/OTP split above:
+//   requestPasswordReset(email)      → emails a 6-digit code
+//   verifyResetCode(email, code)     → exchanges the code for a reset token
+//   resetPassword(token, password)   → sets the new password
+//
+// Real endpoints are noted per-function and in BACKEND_SPEC.md §6.13.
+
+/** Result of a verified reset code — the short-lived token step 3 spends. */
+export interface ResetVerifyResult {
+  resetToken: string;
+}
+
+/**
+ * Step 1 — ask for a reset code at a work email.
+ *
+ * Resolves whether or not the address belongs to an account: a real
+ * backend must not let this endpoint confirm which work emails exist, so
+ * the UI always advances to the code step. The mock mirrors that instead
+ * of rejecting unknown addresses, so the screens behave the same either
+ * way.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (!USE_MOCK) {
+    // Real: POST /api/auth/password-reset/request — always 202, never
+    // reveals whether the account exists.
+    await api.post("/auth/password-reset/request", { email });
+    return;
+  }
+  if (!email.trim()) throw new Error("Enter your work email.");
+  return delay(undefined, 400);
+}
+
+/**
+ * Step 2 — verify the emailed code. Mock: any 6-digit code passes, same
+ * convention as login OTP and app/(auth)/activate.
+ * Real: POST /api/auth/password-reset/verify validates the code
+ * server-side and returns the single-use reset token.
+ */
+export async function verifyResetCode(
+  email: string,
+  code: string,
+): Promise<ResetVerifyResult> {
+  if (!USE_MOCK) {
+    const { data } = await api.post<{ resetToken: string }>(
+      "/auth/password-reset/verify",
+      { email, code },
+    );
+    return { resetToken: data.resetToken };
+  }
+  if (code.length !== 6) throw new Error("Enter all 6 digits.");
+  return delay({ resetToken: `mock-reset.${Date.now()}` }, 300);
+}
+
+/**
+ * Step 3 — spend the reset token on a new password. Does NOT sign the user
+ * in: they go back to /login and authenticate normally, so the existing
+ * role redirect (roleHome) decides /d vs /w. Real: POST
+ * /api/auth/password-reset/confirm, which must also invalidate the token
+ * and every existing session for that account.
+ */
+export async function resetPassword(
+  resetToken: string,
+  newPassword: string,
+): Promise<void> {
+  if (!USE_MOCK) {
+    await api.post("/auth/password-reset/confirm", { resetToken, newPassword });
+    return;
+  }
+  if (!resetToken) throw new Error("This reset link has expired. Start again.");
+  if (!newPassword) throw new Error("Enter a new password.");
+  return delay(undefined, 400);
+}
+
+// Carries the verified reset token (and the email it belongs to) from the
+// verify step to /new-password. sessionStorage, not localStorage — unlike
+// the session token this is a short-lived credential for one in-progress
+// reset, and it should not outlive the tab. Cleared as soon as the
+// password is set, and whenever /new-password is reached without one.
+const RESET_TOKEN_KEY = "pulse_reset_token";
+const RESET_EMAIL_KEY = "pulse_reset_email";
+
+export function storeResetToken(token: string, email: string): void {
+  if (typeof window !== "undefined") {
+    window.sessionStorage.setItem(RESET_TOKEN_KEY, token);
+    window.sessionStorage.setItem(RESET_EMAIL_KEY, email);
+  }
+}
+
+export function getResetToken(): { token: string; email: string } | null {
+  if (typeof window === "undefined") return null;
+  const token = window.sessionStorage.getItem(RESET_TOKEN_KEY);
+  if (!token) return null;
+  return { token, email: window.sessionStorage.getItem(RESET_EMAIL_KEY) ?? "" };
+}
+
+export function clearResetToken(): void {
+  if (typeof window !== "undefined") {
+    window.sessionStorage.removeItem(RESET_TOKEN_KEY);
+    window.sessionStorage.removeItem(RESET_EMAIL_KEY);
+  }
+}
