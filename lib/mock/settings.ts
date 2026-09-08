@@ -281,7 +281,7 @@ export function cancelInvite(id: string): Promise<void> {
 // lib/types/settings.ts. Nothing reads this matrix to gate UI or requests.
 
 // Stable column order for the matrix UI.
-const ROLES: StaffRole[] = ["admin", "doctor", "nurse", "front-desk", "read-only"];
+const ROLES: StaffRole[] = ["admin", "doctor", "nurse", "front_desk", "read_only"];
 
 function row(
   resource: string,
@@ -291,13 +291,13 @@ function row(
 }
 
 let permissionMatrix: PermissionMatrixRow[] = [
-  row("Departments", { admin: "edit", doctor: "view", nurse: "view", "front-desk": "view", "read-only": "view" }),
-  row("Live Queue", { admin: "edit", doctor: "edit", nurse: "edit", "front-desk": "edit", "read-only": "view" }),
-  row("Appointments", { admin: "edit", doctor: "edit", nurse: "edit", "front-desk": "edit", "read-only": "view" }),
-  row("Patients", { admin: "edit", doctor: "edit", nurse: "edit", "front-desk": "edit", "read-only": "view" }),
-  row("Staff & Doctors", { admin: "edit", doctor: "view", nurse: "view", "front-desk": "view", "read-only": "view" }),
-  row("Analytics", { admin: "edit", doctor: "view", nurse: "none", "front-desk": "none", "read-only": "view" }),
-  row("Settings", { admin: "edit", doctor: "none", nurse: "none", "front-desk": "none", "read-only": "none" }),
+  row("Departments", { admin: "edit", doctor: "view", nurse: "view", front_desk: "view", read_only: "view" }),
+  row("Live Queue", { admin: "edit", doctor: "edit", nurse: "edit", front_desk: "edit", read_only: "view" }),
+  row("Appointments", { admin: "edit", doctor: "edit", nurse: "edit", front_desk: "edit", read_only: "view" }),
+  row("Patients", { admin: "edit", doctor: "edit", nurse: "edit", front_desk: "edit", read_only: "view" }),
+  row("Staff & Doctors", { admin: "edit", doctor: "view", nurse: "view", front_desk: "view", read_only: "view" }),
+  row("Analytics", { admin: "edit", doctor: "view", nurse: "none", front_desk: "none", read_only: "view" }),
+  row("Settings", { admin: "edit", doctor: "none", nurse: "none", front_desk: "none", read_only: "none" }),
 ];
 
 export function getPermissionMatrix(): Promise<PermissionMatrixRow[]> {
