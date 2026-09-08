@@ -8,6 +8,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -183,6 +184,15 @@ export default function LoginPage() {
             }}
           />
         </FormField>
+
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-body-sm text-brand hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         <Button
           type="submit"
