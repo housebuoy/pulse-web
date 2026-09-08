@@ -7,7 +7,7 @@ import { usePermissionMatrix, useUpdatePermission } from "@/hooks/use-settings";
 import type { PermissionLevel } from "@/lib/types/settings";
 import type { StaffRole } from "@/lib/types/staff";
 
-const ROLES: StaffRole[] = ["admin", "doctor", "nurse", "front-desk", "read-only"];
+const ROLES: StaffRole[] = ["admin", "doctor", "nurse", "front_desk", "read_only"];
 
 const LEVEL_CYCLE: PermissionLevel[] = ["none", "view", "edit"];
 
