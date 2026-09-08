@@ -47,11 +47,12 @@ export async function fetchAppointmentDepartments(): Promise<
 
 export async function fetchAppointmentsRange(
   from: string,
-  to: string
+  to: string,
+  staffId?: string
 ): Promise<Appointment[]> {
   if (USE_MOCK) return mock.queryAppointmentsRange(from, to);
   const { data } = await api.get<Appointment[]>("/appointments", {
-    params: { from, to },
+    params: { from, to, ...(staffId ? { staffId } : {}) },
   });
   return data;
 }

@@ -45,10 +45,23 @@ export function useAppointmentDepartments() {
   });
 }
 
-export function useAppointmentsRange(from: string, to: string, enabled = true) {
+export interface RangeOptions {
+  staffId?: string;
+  enabled?: boolean;
+}
+
+export function useAppointmentsRange(
+  from: string,
+  to: string,
+  optionsOrEnabled: RangeOptions | boolean = true,
+) {
+  const { staffId, enabled } =
+    typeof optionsOrEnabled === "object"
+      ? optionsOrEnabled
+      : { enabled: optionsOrEnabled };
   return useQuery({
-    queryKey: [...keys.all, "range", from, to] as const,
-    queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to),
+    queryKey: [...keys.all, "range", from, to, staffId ?? null] as const,
+    queryFn: () => appointmentsApi.fetchAppointmentsRange(from, to, staffId),
     placeholderData: (prev) => prev,
     enabled,
   });
