@@ -68,10 +68,14 @@ export default function LoginPage() {
           duration: 15_000,
         });
       }
-      // 2FA: every login completes with a verification code (the backend has
-      // no device-trust concept yet — the real flow always steps through OTP,
-      // per the mock's own DECISION note that every-login OTP is the safer
-      // default for a real facility).
+      // 2FA (per-account /settings/2fa): if the backend returned a token
+      // directly the account does NOT require OTP — go straight in.
+      if (result.token) {
+        finalizeLogin(result.token);
+        router.replace(roleHome(result.session.role));
+        return;
+      }
+      // Otherwise this account requires the verification code.
       setPending(result);
       setStep("otp");
     } catch (err) {
