@@ -44,7 +44,10 @@ export async function getQueueEntries(
   const { data } = await api.get<QueueEntry[]>("/queue/entries", {
     params: departmentId === "all" ? undefined : { departmentId },
   });
-  return data;
+  // Backend returns the full queue for the department/facility (all
+  // statuses); the board only shows active tickets — same filter the mock
+  // branch applies above, kept here so mock and real stay identical.
+  return data.filter(isActive);
 }
 
 export async function callNextPatient(input: CallNextInput): Promise<void> {
