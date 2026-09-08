@@ -67,7 +67,7 @@ export function AppointmentRow({
       </div>
 
       {/* Status */}
-      <div className="col-span-4 flex items-center gap-1.5 lg:col-span-2">
+      <div className="col-span-4 flex items-center gap-2 lg:col-span-2">
         {isEmergency && (
           <AlertTriangle
             className="h-3.5 w-3.5 shrink-0 text-danger"
@@ -92,7 +92,7 @@ export function AppointmentRow({
       {/* Actions */}
       <div
         className={cn(
-          "col-span-8 flex items-center justify-end gap-2 lg:col-span-2",
+          "col-span-8 flex items-center justify-end gap-3 lg:col-span-2",
           actions.length === 0 && !(onMarkPaid && !isPaid) && "opacity-0 pointer-events-none"
         )}
       >
