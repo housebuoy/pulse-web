@@ -65,7 +65,7 @@ export default function LoginPage() {
               {result.devOtp}
             </span>
           ),
-          duration: 60_000,
+          duration: 15_000,
         });
       }
       // 2FA: every login completes with a verification code (the backend has
