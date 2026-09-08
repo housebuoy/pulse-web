@@ -9,6 +9,12 @@ export type AppointmentStatus =
   | "cancelled" // called off ahead of time
   | "no_show"; // confirmed but never arrived
 
+export type AppointmentPaymentStatus =
+  | "pending"
+  | "paid"
+  | "failed"
+  | "refunded";
+
 export type AppointmentType = "in_person" | "virtual";
 
 export type AppointmentPriority = "emergency" | "urgent" | "routine";
@@ -24,6 +30,8 @@ export interface Appointment {
   scheduledAt: string; // ISO datetime
   durationMinutes: number;
   status: AppointmentStatus;
+  /** Backend payment state (pending|paid|failed|refunded). */
+  paymentStatus?: AppointmentPaymentStatus;
   type: AppointmentType;
   priority: AppointmentPriority;
   reason?: string;
@@ -59,4 +67,9 @@ export interface AppointmentFilters {
 export interface UpdateAppointmentInput {
   id: string;
   status: AppointmentStatus;
+}
+
+export interface UpdatePaymentInput {
+  id: string;
+  paymentStatus: AppointmentPaymentStatus;
 }

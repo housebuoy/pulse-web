@@ -7,6 +7,7 @@ import * as appointmentsApi from "@/lib/api/appointments";
 import type {
   AppointmentFilters,
   UpdateAppointmentInput,
+  UpdatePaymentInput,
 } from "@/lib/types/appointments";
 
 const keys = {
@@ -74,6 +75,17 @@ export function useUpdateAppointment() {
       appointmentsApi.updateAppointment(input),
     onSuccess: () => {
       // One status change touches both the list and the stat counts.
+      queryClient.invalidateQueries({ queryKey: keys.all });
+    },
+  });
+}
+
+export function useUpdatePayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdatePaymentInput) =>
+      appointmentsApi.updatePayment(input),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.all });
     },
   });
