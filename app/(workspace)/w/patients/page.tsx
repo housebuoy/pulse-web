@@ -18,13 +18,18 @@ export default function WorkspacePatientsPage() {
   const { data: patients = [], isLoading } = usePatients();
   const { data: entries = [] } = useQueueEntries(session.departmentId);
 
-  // Patients this doctor is currently seeing (in_consultation AND their name
-  // on the queue entry) or who have a current visit in the department today.
+  // Patients this doctor is currently seeing (in_consultation AND the queue
+  // entry belongs to them — matched by stable clinicianId, name as fallback
+  // for rows seeded before the identity fix) or with a current visit in the
+  // department today.
   const doctorEntryIds = new Set(
     entries
       .filter(
         (e) =>
-          e.status === "in_consultation" && e.clinician === session.name,
+          e.status === "in_consultation" &&
+          (e.clinicianId
+            ? e.clinicianId === session.staffId
+            : e.clinician === session.name),
       )
       .map((e) => e.patientName), // keyed by name — mock doesn't have patientId on entries
   );

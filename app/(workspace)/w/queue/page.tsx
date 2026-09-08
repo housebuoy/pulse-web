@@ -33,24 +33,29 @@ export default function WorkspaceQueuePage() {
     session.departmentId,
   );
 
-  // Today's appointments for the "My Day" stat bar.
-  const { data: todayAppts = [] } = useAppointments({ date: today });
-  const myAppts = useMemo(
-    () => todayAppts.filter((a) => a.doctorName === session.name),
-    [todayAppts, session.name],
-  );
+  // Today's appointments for the "My Day" stat bar — server-scoped to this
+  // clinician via staffId (stable identity; renames don't orphan the list).
+  const { data: myAppts = [] } = useAppointments({
+    date: today,
+    staffId: session.staffId,
+  });
   const seen = myAppts.filter((a) => a.status === "completed").length;
 
   const callNext = useCallNext();
   const updateStatus = useUpdateQueueStatus();
 
-  // In consultation — only entries this doctor has called.
+  // In consultation — only entries this doctor has called. Identity join on
+  // the stable clinicianId (name fallback for rows without one yet).
   const serving = useMemo(
     () =>
       allEntries.filter(
-        (e) => e.status === "in_consultation" && e.clinician === session.name,
+        (e) =>
+          e.status === "in_consultation" &&
+          (e.clinicianId
+            ? e.clinicianId === session.staffId
+            : e.clinician === session.name),
       ),
-    [allEntries, session.name],
+    [allEntries, session.staffId, session.name],
   );
 
   // Waiting list — full department queue (doctor can call any).
