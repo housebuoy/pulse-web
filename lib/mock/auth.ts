@@ -79,7 +79,15 @@ export function verifyLoginOtp(code: string): Promise<void> {
 // bearer token, and the exact key the /d sidebar's logout already clears —
 // this is the one existing thread this file pulls on, not a parallel store.
 const TOKEN_KEY = "pulse_token";
+const TOKEN_EXPIRES_KEY = "pulse_token_expires_at";
 const TRUSTED_DEVICE_KEY = "pulse_trusted_device";
+
+// Mock convenience only: a real session's lifetime is enforced by the
+// backend (JWT `exp` claim, checked server-side on every request) — the
+// client never gets to decide it's still logged in. This client-side
+// timestamp exists purely so the demo can show a session actually going
+// stale instead of sitting valid in localStorage forever.
+const SESSION_DURATION_MS = 24 * 60 * 60 * 1000;
 
 function resolveSession(token: string | null): WorkspaceSession | null {
   if (!token) return null;
@@ -92,13 +100,23 @@ function resolveSession(token: string | null): WorkspaceSession | null {
 
 export function getStoredSession(): WorkspaceSession | null {
   if (typeof window === "undefined") return null;
+  const expiresAt = Number(window.localStorage.getItem(TOKEN_EXPIRES_KEY));
+  if (!expiresAt || Date.now() > expiresAt) {
+    clearSession();
+    return null;
+  }
   return resolveSession(window.localStorage.getItem(TOKEN_KEY));
 }
 
-/** Persists the token from a completed login (password, or password+OTP). */
+/** Persists the token from a completed login (password, or password+OTP).
+ *  Also stamps a 24h mock expiry — see SESSION_DURATION_MS above. */
 export function finalizeLogin(token: string): void {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(TOKEN_KEY, token);
+    window.localStorage.setItem(
+      TOKEN_EXPIRES_KEY,
+      String(Date.now() + SESSION_DURATION_MS),
+    );
   }
 }
 
@@ -111,6 +129,7 @@ export function tokenForSession(session: WorkspaceSession): string {
 export function clearSession(): void {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(TOKEN_KEY);
+    window.localStorage.removeItem(TOKEN_EXPIRES_KEY);
   }
 }
 

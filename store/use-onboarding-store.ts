@@ -2,16 +2,12 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { OperatingHoursValue } from "@/components/onboarding/operating-hours";
 
+// Facility identity (name, logo, region, address, HeFRA) is captured on
+// /request-access, before approval — it's not part of this store. What's
+// left to collect once inside /onboarding is purely operational data
+// (departments step) plus the administrator's account details (admin step).
 export interface OnboardingData {
-  // Step 1 — Facility setup
-  hospitalName: string;
-  region: string;
-  address: string;
-  hefraLicense: string; // optional — see FacilitySetupStep
-  document: File | null; // optional — see FacilitySetupStep; not persisted, see below
-  logoUrl?: string; // required — see FacilitySetupStep
-
-  // Step 2 — Departments & operations
+  // Step 1 — Departments & operations
   phone: string;
   email: string;
   specialties: string[];
@@ -19,8 +15,11 @@ export interface OnboardingData {
   duration: string;
   operatingHours: OperatingHoursValue;
 
-  // Step 3 — Administrator account (email only; password is deliberately
-  // never persisted here, even to sessionStorage — see AdminStep)
+  // Step 2 — Administrator account. Verified on /request-access (requester
+  // === admin) and seeded here as soon as approval resolves — see
+  // app/(auth)/onboarding/page.tsx — not collected or written by AdminStep
+  // itself. The rest of the account (name, password) is never persisted
+  // here; password in particular stays local-only, even to sessionStorage.
   adminEmail: string;
 }
 
@@ -31,12 +30,6 @@ interface OnboardingStore {
 }
 
 const initialData: OnboardingData = {
-  hospitalName: "",
-  region: "",
-  address: "",
-  hefraLicense: "",
-  document: null,
-
   phone: "",
   email: "",
   specialties: [],
@@ -60,9 +53,7 @@ const initialData: OnboardingData = {
 // Persisted to sessionStorage (not localStorage — this is a single in-
 // progress signup, not something that should outlive the tab) so the
 // /onboarding?step= route actually survives a refresh: the step comes back
-// from the URL, the form data comes back from here. `document` is a raw
-// File, which isn't JSON-serializable across a reload, so it's excluded —
-// harmless now that the HeFRA document is optional (FacilitySetupStep).
+// from the URL, the form data comes back from here.
 export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set) => ({
@@ -74,9 +65,6 @@ export const useOnboardingStore = create<OnboardingStore>()(
     {
       name: "pulse-onboarding",
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({
-        data: { ...state.data, document: null },
-      }),
     },
   ),
 );

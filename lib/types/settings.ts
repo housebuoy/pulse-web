@@ -1,8 +1,13 @@
 // Backend contract for Settings. Spring Boot serializes to these shapes.
 //
-// Facility/profile fields are NOT a parallel model — they extend the same
-// OnboardingData shape collected during onboarding, so Settings is the edit
-// surface for that data rather than a second source of truth.
+// Facility/profile fields are NOT a parallel model — the operational fields
+// (phone/email/specialties/capacity/duration/operatingHours) extend the
+// same OnboardingData shape collected during onboarding, so Settings is the
+// edit surface for that data rather than a second source of truth. Facility
+// *identity* (hospitalName, region, address, HeFRA, logo) is captured on
+// /request-access instead — before onboarding, before OnboardingData even
+// exists for that facility — so those fields live directly on
+// FacilityProfile rather than being inherited from OnboardingData.
 //
 // CONSTRAINT: nothing in this module is enforced client-side. Team & Access
 // stores role/permission data via the mock so it can be viewed and edited,
@@ -22,7 +27,15 @@ export type FacilityType = "hospital" | "clinic" | "health_center" | "diagnostic
 export type FacilityAccountStatus = "active" | "active_pending_docs" | "suspended";
 
 export interface FacilityProfile
-  extends Omit<OnboardingData, "document" | "adminEmail"> {
+  extends Pick<
+    OnboardingData,
+    "phone" | "email" | "specialties" | "capacity" | "duration" | "operatingHours"
+  > {
+  hospitalName: string;
+  region: string;
+  address: string;
+  hefraLicense: string; // optional to submit — see app/(auth)/request-access
+  logoUrl?: string; // required to submit — see app/(auth)/request-access
   facilityType: FacilityType;
   status: FacilityAccountStatus;
   /** Grace-period deadline, set when status is "active_pending_docs". */
