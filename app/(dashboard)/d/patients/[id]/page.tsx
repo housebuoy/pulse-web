@@ -21,6 +21,7 @@ import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit
 import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-dialog";
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
+import { MedicalRecordsSection } from "@/components/dashboard/patients/medical-records-section";
 import {
   usePatient,
   useRecordVitals,
@@ -268,6 +269,9 @@ export default function PatientFilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* medical records (notes / prescriptions / labs) */}
+              <MedicalRecordsSection patientId={patient.id} />
 
               {/* visit history */}
               <div className="rounded-xl border border-border bg-surface p-5">
