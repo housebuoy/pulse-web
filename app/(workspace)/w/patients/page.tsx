@@ -23,16 +23,19 @@ export default function WorkspacePatientsPage() {
   const patients = patientsQuery.data ?? [];
   const entries = entriesQuery.data ?? [];
 
-  // Latch: only show "No current patients" once both queries have rendered a
-  // settled (non-fetching) frame. On route remount TanStack serves cached
-  // data instantly while revalidating, and a stale filtered view can compute
-  // empty for a beat — that beat should be shimmer, not the empty state.
+  // Latch: only show "No current patients" once both queries have been idle
+  // for a beat. On route remount TanStack serves cached data instantly while
+  // revalidating, and the first painted frame can be isFetching=false with
+  // stale (empty) data — so we never settle on the first idle frame. The
+  // timeout gives a mount-triggered refetch time to start (deps change →
+  // cleanup cancels) and finish; a fresh cache settles after the same beat.
   const [dataSettled, setDataSettled] = useState(false);
   const resolving = patientsQuery.isPending || entriesQuery.isPending;
   const fetching = patientsQuery.isFetching || entriesQuery.isFetching;
   useEffect(() => {
     if (resolving || fetching) return;
-    setDataSettled(true);
+    const t = setTimeout(() => setDataSettled(true), 250);
+    return () => clearTimeout(t);
   }, [resolving, fetching]);
 
   // Patients this doctor is currently seeing (in_consultation AND the queue
