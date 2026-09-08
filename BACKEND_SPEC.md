@@ -1039,6 +1039,90 @@ export interface FacilityAnalytics {
 export interface AnalyticsQuery { from: string; to: string; }
 ```
 
+### 5.11 Clinical records — `lib/types/records.ts`
+
+Added for the doctor-authored records work in `/w` (Phase 1: read).
+These are the **staff-scoped** shapes for the record history the patient
+already reads on the mobile Records tab (`GET /api/patients/me/records`).
+
+Header comment (normative — extends §7.5's "capture and show, never
+advise" line to *authoring*):
+> *"Pulse FAITHFULLY RECORDS clinician-authored content. It never
+> contributes clinical judgement of its own... nothing built on these
+> types may suggest a diagnosis, autocomplete or cross-check a
+> medication, validate a dose against any norm, flag a lab value as out
+> of range, or advise on a plan... 'Structured' here means the input is
+> organized — it does not mean the app is smart."*
+
+```ts
+export type RecordAuthorRole = "doctor" | "lab";
+
+export interface RecordAuthor {          // [server-only] stamped at write time
+  staffId: string; name: string; role: RecordAuthorRole;
+}
+
+export interface VisitContext {
+  visitId?: string;                      // see the note below
+  departmentId: string; departmentName: string;
+  startedAt?: string;                    // Patient.currentVisit.since
+}
+
+export interface VisitRecord {
+  id: string; patientId: string;
+  visit: VisitContext;
+  author: RecordAuthor;                  // [server-only]
+  recordedAt: string;                    // [server-only]
+  presentingComplaint: string; examination: string;
+  diagnosis: string;                     // FREE TEXT, never a picked code
+  plan: string; summary: string;
+}
+
+export interface PrescriptionRecord {
+  id: string; patientId: string; visitRecordId: string;
+  author: RecordAuthor;                  // [server-only]
+  prescribedAt: string;                  // [server-only]
+  medication: string;                    // FREE TEXT, no autocomplete/catalog
+  dose: string; frequency: string; duration: string;
+  instructions?: string;
+}
+
+export interface LabResultValue {
+  label: string; value: string;
+  referenceRange?: string;               // the lab's own printed range, verbatim
+}
+
+export interface LabResultRecord {
+  id: string; patientId: string; visitRecordId?: string;
+  author: RecordAuthor;                  // role is always "lab"
+  reportedAt: string;
+  testName: string; specimen?: string;
+  values: LabResultValue[]; notes?: string;
+}
+
+export interface PatientRecords {        // the mobile Records tab payload
+  visits: VisitRecord[];
+  prescriptions: PrescriptionRecord[];
+  labResults: LabResultRecord[];
+}
+```
+
+**Notes for the backend**:
+- All three lists are **newest-first** and always arrays, never null
+  (`lib/mock/records.ts` sorts on `recordedAt`/`prescribedAt`/
+  `reportedAt` descending).
+- `VisitContext.visitId` is optional because **the frontend has no stable
+  visit id today** — `Patient.currentVisit` carries no id (§10.3). Until
+  the backend owns a real `Visit` entity, a record identifies its visit
+  by department + start time. Once `Visit` exists, `visitId` should
+  become required and `departmentId`/`startedAt` become denormalized
+  copies of it.
+- `LabResultRecord` is **lab-authored, never doctor-authored**. `/w`
+  renders it read-only; there is no staff-side write endpoint for it in
+  this frontend (§6.11).
+- `referenceRange` is stored and displayed **verbatim as part of the
+  lab's report**. The app never compares `value` against it and never
+  flags a value as abnormal — see §7.5.
+
 ---
 
 ## 6. Endpoints (exhaustive — every function in `lib/api/*`)
@@ -1198,6 +1282,26 @@ that didn't exist in the codebase until §4 was built.
 See §4.3 for the full business-rule extraction (auto-approval caveat,
 exact field shapes) and §4.4 for what a real `POST` here should trigger
 on the platform-operator side instead of the mock's immediate token.
+
+### 6.11 Clinical records — `lib/api/records.ts`
+
+| Method | Path | Params | Body | Response | Mock fallback | Hook |
+|---|---|---|---|---|---|---|
+| GET | `/patients/{id}/records` | path `id` | — | `PatientRecords` | `listPatientRecords(patientId)` | `usePatientRecords(patientId)` |
+
+This is the **staff-scoped counterpart** of the existing patient-side
+`GET /api/patients/me/records` that backs the mobile Records tab: same
+projection, addressed by patient id, authorized as facility staff rather
+than as the patient. It must be tenant-filtered like every other
+facility-plane read (§2.1) and RBAC-gated (§8.2) — patient records are
+never reachable from the platform-operator plane (§3.3).
+
+Not polled — `hooks/use-records.ts` sets no `refetchInterval`; the query
+key `["records","patient",id]` is invalidated by the authoring mutations
+instead.
+
+**Write endpoints are backend-pending (psam-717)** — see §6.12 once
+Phase 2/3 land.
 
 ---
 

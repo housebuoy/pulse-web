@@ -16,6 +16,7 @@ import { PatientVisitBadge } from "@/components/dashboard/patients/patient-visit
 import { PatientFormDialog } from "@/components/dashboard/patients/patient-form-dialog";
 import { ClinicalRecordDialog } from "@/components/dashboard/patients/clinical-record-dialog";
 import { VitalsDialog } from "@/components/dashboard/patients/vitals-dialog";
+import { RecordHistory } from "@/components/workspace/records/record-history";
 import {
   usePatient,
   useRecordVitals,
@@ -216,6 +217,10 @@ export default function WorkspacePatientFilePage() {
                   </div>
                 </div>
               </div>
+
+              {/* record history — read-only context before authoring. Same
+                  data the patient reads on the mobile Records tab. */}
+              <RecordHistory patientId={patient.id} />
 
               {/* current visit */}
               {patient.currentVisit && (
