@@ -11,7 +11,6 @@ export function NowServingPanel({
   serving,
   canCallNext,
   onCallNext,
-  onNoShow,
   isCalling,
   isUpdating,
   isLoading = false,
@@ -19,7 +18,6 @@ export function NowServingPanel({
   serving: QueueEntry[];
   canCallNext: boolean;
   onCallNext: () => void;
-  onNoShow: (entry: QueueEntry) => void;
   isCalling: boolean;
   isUpdating: boolean;
   /** Show shimmer while data may still be refetching (remount from cache). */
@@ -99,15 +97,6 @@ export function NowServingPanel({
                   disabled={isUpdating}
                 >
                   Complete
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => onNoShow(entry)}
-                  disabled={isUpdating}
-                >
-                  No-show
                 </Button>
               </div>
             </div>
