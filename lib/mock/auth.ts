@@ -243,15 +243,22 @@ export interface ResetVerifyResult {
  * of rejecting unknown addresses, so the screens behave the same either
  * way.
  */
-export async function requestPasswordReset(email: string): Promise<void> {
+export async function requestPasswordReset(
+  email: string,
+): Promise<{ devOtp?: string | null }> {
   if (!USE_MOCK) {
-    // Real: POST /api/auth/password-reset/request — always 202, never
-    // reveals whether the account exists.
-    await api.post("/auth/password-reset/request", { email });
-    return;
+    // Real: POST /api/auth/password-reset/request — always advances, never
+    // reveals whether the account exists. Dev mode on the backend echoes the
+    // code (devOtp) so hand-tests work before real inboxes exist.
+    const { data } = await api.post<{ message?: string; devOtp?: string | null }>(
+      "/auth/password-reset/request",
+      { email },
+    );
+    return { devOtp: data.devOtp ?? null };
   }
   if (!email.trim()) throw new Error("Enter your work email.");
-  return delay(undefined, 400);
+  await delay(undefined, 400);
+  return { devOtp: null };
 }
 
 /**
@@ -287,7 +294,14 @@ export async function resetPassword(
   newPassword: string,
 ): Promise<void> {
   if (!USE_MOCK) {
-    await api.post("/auth/password-reset/confirm", { resetToken, newPassword });
+    // The confirm endpoint needs the email too; it was stored alongside the
+    // reset token by the verify step (storeResetToken).
+    const reset = getResetToken();
+    await api.post("/auth/password-reset/confirm", {
+      email: reset?.email ?? "",
+      resetToken,
+      newPassword,
+    });
     return;
   }
   if (!resetToken) throw new Error("This reset link has expired. Start again.");
