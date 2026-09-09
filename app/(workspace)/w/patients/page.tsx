@@ -35,11 +35,14 @@ export default function WorkspacePatientsPage() {
   const entries = entriesQuery.data ?? [];
 
   // Handled list = completed appointments for this doctor (stable staffId
-  // join — never names). Querying a wide range is fine server-side; the
-  // demo dataset is small. Each patient shows their most recent completed
-  // appointment.
-  const today = new Date().toISOString().slice(0, 10);
-  const handledQuery = useAppointmentsRange("2020-01-01", today, {
+  // join — never names). The range MUST extend into the future: a patient can
+  // check in and be served today against an appointment scheduled LATER (the
+  // mobile flow does not require the slot to be today), so a completed
+  // consult's scheduledAt can sit after the current date. The client-side
+  // status filter keeps only completed rows; the demo dataset is small, so a
+  // wide range is fine server-side.
+  const HANDLED_TO = "2099-12-31";
+  const handledQuery = useAppointmentsRange("2020-01-01", HANDLED_TO, {
     staffId: session.staffId,
     enabled: Boolean(session.staffId),
   });
