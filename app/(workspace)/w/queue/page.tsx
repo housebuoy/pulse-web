@@ -139,9 +139,6 @@ export default function WorkspaceQueuePage() {
             onCallNext={() =>
               callNext.mutate({ departmentId: session.departmentId })
             }
-            onComplete={(entry) =>
-              updateStatus.mutate({ entryId: entry.id, status: "completed" })
-            }
             onNoShow={(entry) =>
               updateStatus.mutate({ entryId: entry.id, status: "no_show" })
             }
