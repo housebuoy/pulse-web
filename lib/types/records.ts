@@ -8,6 +8,9 @@ export interface VisitRecord {
   date: string; // YYYY-MM-DD
   doctor: string;
   summary: string;
+  /** Present once visits are written via the queue completion endpoint. */
+  symptoms?: string;
+  recommendations?: string;
 }
 
 export interface LabValue {
@@ -33,6 +36,8 @@ export interface PrescriptionRecord {
   prescribingDoctor: string;
   hospital: string;
   date: string; // YYYY-MM-DD
+  /** Present once prescriptions are written via the queue completion endpoint. */
+  instructions?: string;
 }
 
 export interface PatientRecords {
