@@ -6,7 +6,10 @@ import {
   getQueueEntries,
   callNextPatient,
   updateQueueEntryStatus,
+  completeQueueEntry,
 } from "@/lib/api/queue";
+import { appointmentKeys } from "@/hooks/use-appointments";
+import type { CompleteConsultInput } from "@/lib/types/queue";
 
 export const queueKeys = {
   all: ["queue"] as const,
@@ -44,5 +47,26 @@ export function useUpdateQueueStatus() {
   return useMutation({
     mutationFn: updateQueueEntryStatus,
     onSuccess: () => qc.invalidateQueries({ queryKey: queueKeys.all }),
+  });
+}
+
+export interface CompleteConsultVariables {
+  entryId: number | string;
+  input: CompleteConsultInput;
+}
+
+// Completes a consultation (POST /queue/entries/{id}/complete). The backend
+// records the outcome and marks the booking completed, which feeds both the
+// queue board and the appointments-derived "Previously handled" list — so
+// invalidate both query families on success.
+export function useCompleteConsult() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ entryId, input }: CompleteConsultVariables) =>
+      completeQueueEntry(entryId, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queueKeys.all });
+      qc.invalidateQueries({ queryKey: appointmentKeys.all });
+    },
   });
 }

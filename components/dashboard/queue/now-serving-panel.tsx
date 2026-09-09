@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { QueueEntry } from "@/lib/types/queue";
 import { LiveDuration } from "@/components/dashboard/queue/live-duration";
+import { ConsultCompleteDialog } from "@/components/dashboard/queue/consult-complete-dialog";
 
 export function NowServingPanel({
   serving,
   canCallNext,
   onCallNext,
-  onComplete,
   onNoShow,
   isCalling,
   isUpdating,
@@ -18,13 +19,15 @@ export function NowServingPanel({
   serving: QueueEntry[];
   canCallNext: boolean;
   onCallNext: () => void;
-  onComplete: (entry: QueueEntry) => void;
   onNoShow: (entry: QueueEntry) => void;
   isCalling: boolean;
   isUpdating: boolean;
   /** Show shimmer while data may still be refetching (remount from cache). */
   isLoading?: boolean;
 }) {
+  // Entry whose consultation is being completed — opens the consult dialog.
+  const [consultEntry, setConsultEntry] = useState<QueueEntry | null>(null);
+
   return (
     <div className="rounded-xl border border-border bg-surface p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -92,7 +95,7 @@ export function NowServingPanel({
                 <Button
                   size="sm"
                   className="flex-1"
-                  onClick={() => onComplete(entry)}
+                  onClick={() => setConsultEntry(entry)}
                   disabled={isUpdating}
                 >
                   Complete
@@ -111,6 +114,11 @@ export function NowServingPanel({
           ))}
         </div>
       )}
+
+      <ConsultCompleteDialog
+        entry={consultEntry}
+        onClose={() => setConsultEntry(null)}
+      />
     </div>
   );
 }

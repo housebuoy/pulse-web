@@ -50,3 +50,17 @@ export interface UpdateStatusInput {
   entryId: string;
   status: QueueStatus;
 }
+
+// POST /queue/entries/{id}/complete — consultation outcome recorded when a
+// doctor finishes with a patient. All fields optional; the backend writes the
+// consult record and marks the queue entry (and any linked booking) done.
+export interface CompleteConsultInput {
+  symptoms?: string;
+  summary?: string;
+  recommendations?: string;
+  prescriptions?: {
+    medication: string;
+    dose: string;
+    instructions?: string;
+  }[];
+}

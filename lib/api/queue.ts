@@ -10,6 +10,7 @@ import {
   buildDepartments,
 } from "@/lib/mock/queue";
 import type {
+  CompleteConsultInput,
   QueueDepartment,
   QueueEntry,
   CallNextInput,
@@ -68,4 +69,25 @@ export async function updateQueueEntryStatus(
     return;
   }
   await api.patch(`/queue/entries/${input.entryId}`, { status: input.status });
+}
+
+// Completes a consultation: records the outcome (visit note + prescriptions)
+// and marks the entry done. Returns the updated entry — same shape as the
+// entries list item — so the board can refresh in place.
+export async function completeQueueEntry(
+  entryId: number | string,
+  input: CompleteConsultInput,
+): Promise<QueueEntry> {
+  if (USE_MOCK) {
+    await delay(300);
+    setStatus(String(entryId), "completed");
+    const entry = listEntries().find((e) => e.id === String(entryId));
+    if (!entry) throw new Error("Queue entry not found");
+    return entry;
+  }
+  const { data } = await api.post<QueueEntry>(
+    `/queue/entries/${entryId}/complete`,
+    input,
+  );
+  return data;
 }
