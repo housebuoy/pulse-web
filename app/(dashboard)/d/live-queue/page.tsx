@@ -68,9 +68,6 @@ function LiveQueueBody() {
           serving={serving}
           canCallNext={!isAllView && waiting.length > 0}
           onCallNext={() => callNext.mutate({ departmentId: department })}
-          onComplete={(entry) =>
-            updateStatus.mutate({ entryId: entry.id, status: "completed" })
-          }
           onNoShow={(entry) =>
             updateStatus.mutate({ entryId: entry.id, status: "no_show" })
           }
