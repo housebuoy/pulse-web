@@ -139,9 +139,6 @@ export default function WorkspaceQueuePage() {
             onCallNext={() =>
               callNext.mutate({ departmentId: session.departmentId })
             }
-            onNoShow={(entry) =>
-              updateStatus.mutate({ entryId: entry.id, status: "no_show" })
-            }
             isCalling={callNext.isPending}
             isUpdating={updateStatus.isPending}
             isLoading={isLoading || (!dataSettled && serving.length === 0)}
