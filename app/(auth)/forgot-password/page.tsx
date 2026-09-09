@@ -38,7 +38,6 @@ export default function ForgotPasswordPage() {
 
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -53,12 +52,11 @@ export default function ForgotPasswordPage() {
     setError("");
     setSubmitting(true);
     try {
-      const { devOtp: dev } = await requestPasswordReset(trimmed);
+      await requestPasswordReset(trimmed);
       // Always advances, even for an address with no account — the
       // endpoint must not confirm which work emails exist. See
       // requestPasswordReset in lib/mock/auth.ts.
       setEmail(trimmed);
-      setDevOtp(dev ?? null);
       setStep("code");
     } catch (err) {
       setError(backendMessage(err) ?? "Couldn't send the code. Try again.");
@@ -85,9 +83,7 @@ export default function ForgotPasswordPage() {
   };
 
   const handleResend = () => {
-    void requestPasswordReset(email).then(({ devOtp: dev }) => {
-      setDevOtp(dev ?? null);
-    });
+    void requestPasswordReset(email);
     setCode("");
     setError("");
   };
@@ -123,17 +119,6 @@ export default function ForgotPasswordPage() {
           </p>
 
           <form onSubmit={handleVerify} className="mt-8 space-y-5">
-            {devOtp && (
-              <button
-                type="button"
-                onClick={() => setCode(devOtp)}
-                className="w-full rounded-lg border border-dashed border-brand/50 bg-brand/5 px-4 py-3 text-left text-body-sm text-brand"
-              >
-                <span className="font-semibold">Dev mode</span> — code:{" "}
-                <span className="font-mono tracking-widest">{devOtp}</span>{" "}
-                (tap to fill)
-              </button>
-            )}
             <OtpInput
               value={code}
               onChange={(v) => {
